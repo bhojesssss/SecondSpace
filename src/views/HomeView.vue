@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#FDF0D5]">
+  <div>
 
     <!-- HERO CAROUSEL FASHION -->
     <section class="pb-6">

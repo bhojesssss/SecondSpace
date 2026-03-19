@@ -52,6 +52,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+
 }
 
 html {
@@ -121,4 +122,28 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #C1121F;
   border-radius: 3px;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#app>nav {
+  width: 100%;
+}
+
+#app>main {
+  width: 100%;
+  max-width: 1024px;
+}
+
+#app>nav {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1024px;
+  max-width: 100%;
 }
