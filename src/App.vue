@@ -1,13 +1,15 @@
 <template>
-  <div id="app" class="min-h-screen bg-[#FDF0D5]">
+  <div class="app-wrapper min-h-screen bg-[#FDF0D5] flex flex-col items-center w-full relative">
     <NavbarTop v-if="!isMobile" />
-    <main class="max-w-5xl mx-auto w-full px-4">
-      <router-view v-slot="{ Component }">
+    
+    <main class="flex-1 w-full max-w-5xl px-4 pt-4 md:pt-0 pb-6">
+      <router-view v-slot="{ Component, route }">
         <transition name="page" mode="out-in">
-          <component :is="Component" />
+          <component :is="Component" :key="route.fullPath" />
         </transition>
       </router-view>
     </main>
+
     <NavbarBottom v-if="isMobile" />
     <div v-if="isMobile" class="pb-20"></div>
   </div>
@@ -15,10 +17,11 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import NavbarTop from '@/components/NavbarTop.vue'
 import NavbarBottom from '@/components/NavbarBottom.vue'
 
-const isMobile = ref(false)
+const isMobile = ref(window.innerWidth < 768)
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 768

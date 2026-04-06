@@ -20,10 +20,10 @@
             <img :src="product.img" :alt="product.name" class="w-full h-full object-cover" />
           </div>
           <!-- Thumbnails -->
-          <div class="flex gap-2 overflow-x-auto scrollbar-hide">
+          <div class="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1">
             <div v-for="i in 4" :key="i"
-              class="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-[#C1121F] cursor-pointer border-2 transition-all duration-200"
-              :class="activeThumb === i ? 'border-[#C1121F]' : 'border-transparent opacity-60'"
+              class="flex-shrink-0 snap-center w-16 h-16 rounded-xl overflow-hidden bg-[#C1121F] cursor-pointer border-2 transition-all duration-300"
+              :class="activeThumb === i ? 'border-[#C1121F] shadow-md scale-[1.02]' : 'border-transparent opacity-60 hover:opacity-100'"
               @click="activeThumb = i"
             >
               <img :src="product.img" class="w-full h-full object-cover" />
@@ -45,8 +45,8 @@
             </button>
           </div>
 
-          <p class="text-2xl font-bold text-[#C1121F] mb-1">Rp {{ formatPrice(product.price) }}</p>
-          <p class="text-xs text-black/40 mb-4">Terjual {{ product.sold }} · ⭐ 4.8</p>
+          <p class="text-3xl font-bold text-[#C1121F] mb-1 leading-none" style="font-family: 'CalSans', serif;">Rp {{ formatPrice(product.price) }}</p>
+          <p class="text-xs text-black/50 mb-4">Terjual {{ product.sold }} · ⭐ 4.8 (24 ulasan)</p>
 
           <!-- Size selector -->
           <div class="mb-4">
@@ -56,10 +56,10 @@
                 v-for="size in ['S', 'M', 'L', 'XL', 'XXL']"
                 :key="size"
                 @click="selectedSize = size"
-                class="w-10 h-10 rounded-lg text-sm font-bold border-2 transition-all duration-200"
+                class="w-10 h-10 rounded-xl text-sm font-bold border-2 transition-all duration-300 active:scale-95"
                 :class="selectedSize === size
-                  ? 'border-[#C1121F] bg-[#C1121F] text-white'
-                  : 'border-black/20 bg-white hover:border-[#C1121F]'"
+                  ? 'border-[#C1121F] bg-gradient-to-br from-[#C1121F] to-[#780000] text-white shadow-md shadow-[#C1121F]/30'
+                  : 'border-black/10 glass-panel hover:border-black/30 text-black/70'"
               >{{ size }}</button>
             </div>
           </div>
@@ -72,10 +72,10 @@
                 v-for="cond in ['Like New', 'Good', 'Fair']"
                 :key="cond"
                 @click="selectedCondition = cond"
-                class="px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200"
+                class="px-4 py-2 rounded-full text-xs font-bold border-2 transition-all duration-300 active:scale-95"
                 :class="selectedCondition === cond
-                  ? 'border-[#C1121F] bg-[#C1121F] text-white'
-                  : 'border-black/20 bg-white hover:border-[#C1121F]'"
+                  ? 'border-[#C1121F] bg-gradient-to-br from-[#C1121F] to-[#780000] text-white shadow-md shadow-[#C1121F]/30'
+                  : 'border-black/10 glass-panel hover:border-black/30 text-black/70'"
               >{{ cond }}</button>
             </div>
           </div>
@@ -87,24 +87,24 @@
           </div>
 
           <!-- Seller info -->
-          <div class="flex items-center gap-3 p-3 bg-white/60 rounded-xl mb-6">
-            <div class="w-10 h-10 rounded-full bg-[#669BBC] flex items-center justify-center text-white font-bold text-sm">S</div>
+          <div class="flex items-center gap-3 p-3 glass-panel rounded-xl mb-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#669BBC] to-[#003049] flex items-center justify-center text-white font-bold text-lg shadow-inner">S</div>
             <div>
               <p class="text-sm font-bold">SecondSeller</p>
-              <p class="text-xs text-black/40">Bandar Lampung · ⭐ 4.9</p>
+              <p class="text-[10px] uppercase tracking-wider text-black/50">Bandar Lampung · ⭐ 4.9</p>
             </div>
-            <button @click="$router.push('/chat')" class="ml-auto px-3 py-1.5 border border-[#C1121F] text-[#C1121F] text-xs font-bold rounded-full hover:bg-[#C1121F] hover:text-white transition-colors">Chat</button>
+            <button @click="$router.push('/chat')" class="ml-auto px-4 py-2 border-2 border-[#C1121F] text-[#C1121F] text-xs font-bold rounded-full hover:bg-[#C1121F] hover:text-white active:scale-95 transition-all">Chat</button>
           </div>
 
           <!-- CTA Buttons -->
           <div class="flex gap-3">
             <button
               @click="addToCart"
-              class="flex-1 py-3 border-2 border-[#C1121F] text-[#C1121F] font-bold rounded-xl hover:bg-[#C1121F] hover:text-white transition-all duration-200 text-sm"
+              class="flex-1 py-3 border-2 border-[#C1121F] text-[#C1121F] font-bold rounded-xl active:bg-[#C1121F] hover:bg-[#C1121F] active:text-white hover:text-white active:scale-95 transition-all duration-300 text-sm"
             >+ Keranjang</button>
             <button
               @click="buyNow"
-              class="flex-1 py-3 bg-[#C1121F] text-white font-bold rounded-xl hover:bg-[#780000] transition-all duration-200 text-sm shadow-lg shadow-[#C1121F]/30"
+              class="flex-1 py-3 bg-gradient-to-r from-[#C1121F] to-[#780000] text-white font-bold rounded-xl active:scale-95 hover:opacity-90 transition-all duration-300 text-sm shadow-lg shadow-[#C1121F]/30"
             >Beli Sekarang</button>
           </div>
         </div>

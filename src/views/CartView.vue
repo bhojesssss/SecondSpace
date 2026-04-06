@@ -2,19 +2,24 @@
 <template>
   <div class="min-h-screen bg-[#FDF0D5] pb-8">
     <div class="pb-6">
-      <h1 class="text-2xl font-bold mb-4" style="font-family: 'CalSans', serif;">Keranjang</h1>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-1 h-7 bg-[#C1121F] rounded-full"></div>
+        <h1 class="text-2xl font-bold" style="font-family: 'CalSans', serif;">Keranjang</h1>
+      </div>
 
-      <div v-if="cartItems.length === 0" class="text-center py-20">
-        <p class="text-5xl mb-4">🛍️</p>
+      <div v-if="cartItems.length === 0" class="text-center py-20 reveal">
+        <div class="w-24 h-24 bg-gradient-to-br from-[#C1121F] to-[#780000] rounded-full mx-auto flex items-center justify-center text-5xl mb-6 shadow-lg shadow-[#C1121F]/40 transform hover:scale-110 transition-transform duration-300">
+          🛍️
+        </div>
         <p class="font-bold text-lg mb-1">Keranjang kosong</p>
-        <p class="text-sm text-black/50 mb-4">Yuk belanja dulu!</p>
-        <router-link to="/catalog" class="px-6 py-2 bg-[#C1121F] text-white font-bold rounded-full text-sm">Browse Catalog</router-link>
+        <p class="text-sm text-black/50 mb-6">Yuk belanja dulu!</p>
+        <router-link to="/catalog" class="px-8 py-3 bg-gradient-to-r from-[#C1121F] to-[#780000] text-white font-bold rounded-full text-sm shadow-md hover:shadow-lg active:scale-95 transition-all">Browse Catalog</router-link>
       </div>
 
       <div v-else>
         <div class="space-y-3 mb-6">
           <div v-for="item in cartItems" :key="item.id"
-            class="flex gap-3 bg-white/60 rounded-xl p-3 reveal"
+            class="flex gap-3 glass-panel rounded-xl p-3 reveal shadow-sm hover:shadow-md active:scale-[1.02] transition-all"
           >
             <div class="w-20 h-20 rounded-lg overflow-hidden bg-[#C1121F] flex-shrink-0">
               <img :src="item.img" class="w-full h-full object-cover" />
@@ -40,7 +45,7 @@
         </div>
 
         <!-- Summary -->
-        <div class="bg-white/60 rounded-xl p-4">
+        <div class="glass-panel rounded-xl p-4 shadow-sm reveal reveal-delay-1">
           <div class="flex justify-between text-sm mb-1">
             <span class="text-black/60">Subtotal ({{ cartItems.length }} item)</span>
             <span>Rp {{ formatPrice(subtotal) }}</span>
@@ -53,7 +58,7 @@
             <span>Total</span>
             <span class="text-[#C1121F]">Rp {{ formatPrice(subtotal) }}</span>
           </div>
-          <button class="w-full mt-4 py-3 bg-[#C1121F] text-white font-bold rounded-xl hover:bg-[#780000] transition-colors shadow-lg shadow-[#C1121F]/30">
+          <button class="w-full mt-4 py-3 bg-gradient-to-r from-[#C1121F] to-[#780000] text-white font-bold rounded-xl active:scale-[0.98] transition-all shadow-lg shadow-[#C1121F]/30 hover:opacity-90">
             Checkout
           </button>
         </div>

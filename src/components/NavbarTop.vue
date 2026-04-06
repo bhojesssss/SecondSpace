@@ -1,6 +1,6 @@
 <template>
-  <nav class="navbar-top fixed top-0 left-0 right-0 z-50 bg-[#FDF0D5]">
-    <div class="max-w-[1024px] mx-auto px-4 h-14 flex items-center gap-25">
+  <nav class="navbar-top fixed top-0 w-full flex justify-center z-50 bg-[#FDF0D5]">
+    <div class="w-full max-w-5xl px-4 h-14 flex items-center justify-between gap-4">
       <!-- Logo -->
       <router-link to="/" class="flex-shrink-0">
         <img src="@/assets/Img/logo.svg" alt="SecondSpace" class="h-8" />

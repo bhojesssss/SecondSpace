@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @font-face {
   font-family: 'CalSans';
@@ -36,12 +36,12 @@
 }
 
 @theme {
-  --color-bg: #FDF0D5;
-  --color-fashion: #C1121F;
+  --color-bg: #fdf0d5;
+  --color-fashion: #c1121f;
   --color-fashion-dark: #780000;
-  --color-sports: #669BBC;
+  --color-sports: #669bbc;
   --color-sports-dark: #003049;
-  --color-white: #FFFFFF;
+  --color-white: #ffffff;
   --color-black: #111111;
 
   --font-display: 'CalSans', serif;
@@ -52,7 +52,6 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-
 }
 
 html {
@@ -60,7 +59,7 @@ html {
 }
 
 body {
-  background-color: #FDF0D5;
+  background-color: #fdf0d5;
   font-family: 'Helvetica', Arial, sans-serif;
   color: #111111;
   overflow-x: hidden;
@@ -86,7 +85,9 @@ body {
 .reveal {
   opacity: 0;
   transform: translateY(32px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 .reveal.visible {
@@ -116,11 +117,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #FDF0D5;
+  background: #fdf0d5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #C1121F;
+  background: #c1121f;
   border-radius: 3px;
 }
 
@@ -130,20 +131,35 @@ body {
   align-items: center;
 }
 
-#app>nav {
-  width: 100%;
-}
-
-#app>main {
-  width: 100%;
-  max-width: 1024px;
-}
-
-#app>nav {
+#app > nav.navbar-top {
   position: fixed;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 1024px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 1440px;
+}
+
+#app > main {
+  width: 100%;
+  max-width: 1440px;
+}
+
+.app-wrapper {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* Glassmorphism utility with an opaque fallback */
+.glass-panel {
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  .glass-panel {
+    background-color: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 }

@@ -9,19 +9,19 @@
           v-for="chat in chats"
           :key="chat.id"
           @click="activeChatId = chat.id"
-          class="flex items-center gap-3 bg-white/60 rounded-xl p-3 cursor-pointer hover:bg-white transition-colors reveal"
+          class="flex items-center gap-3 glass-panel rounded-xl p-3 cursor-pointer active:scale-[0.98] active:bg-white transition-all shadow-sm reveal"
         >
-          <div class="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden" :class="chat.color">
+          <div class="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-inner" :class="chat.color">
             <div class="w-full h-full flex items-center justify-center text-white font-bold text-lg">{{ chat.name[0] }}</div>
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between">
-              <p class="font-bold text-sm">{{ chat.name }}</p>
+              <p class="font-bold text-sm text-black/80">{{ chat.name }}</p>
               <span class="text-[10px] text-black/40">{{ chat.time }}</span>
             </div>
             <p class="text-xs text-black/50 truncate">{{ chat.lastMessage }}</p>
           </div>
-          <div v-if="chat.unread" class="w-5 h-5 bg-[#C1121F] rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">{{ chat.unread }}</div>
+          <div v-if="chat.unread" class="w-5 h-5 bg-gradient-to-br from-[#C1121F] to-[#780000] shadow-md shadow-[#C1121F]/40 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">{{ chat.unread }}</div>
         </div>
       </div>
 
@@ -38,18 +38,20 @@
           </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto space-y-3 pb-4">
+        <div class="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-hide">
           <div v-for="msg in messages" :key="msg.id" class="flex" :class="msg.mine ? 'justify-end' : 'justify-start'">
-            <div class="max-w-[75%] px-3 py-2 rounded-2xl text-sm"
-              :class="msg.mine ? 'bg-[#C1121F] text-white rounded-br-sm' : 'bg-white/80 text-black rounded-bl-sm'"
+            <div class="max-w-[75%] px-4 py-2.5 text-sm shadow-sm"
+              :class="msg.mine ? 'bg-gradient-to-br from-[#C1121F] to-[#780000] text-white rounded-2xl rounded-br-sm' : 'glass-panel text-black/80 rounded-2xl rounded-bl-sm'"
             >{{ msg.text }}</div>
           </div>
         </div>
 
-        <div class="flex gap-2 pt-2 border-t border-black/10">
-          <input v-model="newMessage" @keyup.enter="sendMessage" type="text" placeholder="Ketik pesan..." class="flex-1 h-10 px-4 rounded-full bg-white/80 border border-black/20 text-sm focus:outline-none focus:border-[#C1121F]" />
-          <button @click="sendMessage" class="w-10 h-10 bg-[#C1121F] rounded-full flex items-center justify-center text-white hover:bg-[#780000] transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <div class="flex gap-2 pt-3 pb-2">
+          <div class="flex-1 relative">
+            <input v-model="newMessage" @keyup.enter="sendMessage" type="text" placeholder="Ketik pesan..." class="w-full h-12 pl-5 pr-4 rounded-full glass-panel shadow-sm text-sm focus:outline-none focus:border-[#C1121F] focus:ring-2 focus:ring-[#C1121F]/20 transition-all border border-black/10" />
+          </div>
+          <button @click="sendMessage" class="w-12 h-12 bg-gradient-to-br from-[#C1121F] to-[#780000] shadow-md shadow-[#C1121F]/30 rounded-full flex items-center justify-center text-white active:scale-95 transition-all flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
       </div>

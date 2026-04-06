@@ -3,55 +3,58 @@
 
     <!-- Header -->
     <div class="px-4 pt-4 pb-3 max-w-6xl mx-auto">
-      <h1 class="text-2xl font-bold mb-3" style="font-family: 'CalSans', serif;">Catalog</h1>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-1 h-7 bg-[linear-gradient(135deg,#C1121F,#780000)] rounded-full"></div>
+        <h1 class="text-2xl font-bold" style="font-family: 'CalSans', serif;">Catalog</h1>
+      </div>
 
       <!-- Search (mobile only) -->
       <div class="md:hidden relative mb-3">
         <input v-model="searchQuery" type="text" placeholder="Search products..."
-          class="w-full h-9 pl-4 pr-10 rounded-full border border-black/20 bg-white/80 text-sm focus:outline-none focus:border-[#C1121F] transition-colors" />
+          class="w-full h-10 pl-5 pr-10 rounded-full border border-black/10 glass-panel shadow-sm hover:shadow-md text-sm focus:outline-none focus:border-[#C1121F] focus:ring-2 focus:ring-[#C1121F]/20 transition-all duration-300" />
       </div>
 
       <!-- Filter Tabs -->
-      <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         <button
           v-for="tab in tabs"
           :key="tab.value"
           @click="activeTab = tab.value"
-          class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200"
+          class="flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all duration-300 shadow-sm hover:shadow-md active:scale-95"
           :class="activeTab === tab.value
-            ? (tab.value === 'sports' ? 'bg-[#669BBC] text-white' : 'bg-[#C1121F] text-white')
-            : 'bg-white/60 text-black/60 hover:bg-white'"
+            ? (tab.value === 'sports' ? 'bg-gradient-to-r from-[#669BBC] to-[#003049] text-white shadow-[#669BBC]/30' : 'bg-gradient-to-r from-[#C1121F] to-[#780000] text-white shadow-[#C1121F]/30')
+            : 'glass-panel text-black/60 hover:text-black'"
         >{{ tab.label }}</button>
       </div>
     </div>
 
     <!-- Category chips -->
     <div class="px-4 pb-4 max-w-6xl mx-auto">
-      <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         <button
           v-for="cat in activeCategories"
           :key="cat"
           @click="activeCategory = cat"
-          class="flex-shrink-0 px-3 py-1 rounded-full text-xs transition-all duration-200 border"
+          class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs transition-all duration-300 border-2 active:scale-95 hover:shadow-sm"
           :class="activeCategory === cat
-            ? 'bg-black text-white border-black'
-            : 'bg-transparent text-black/60 border-black/20 hover:border-black/40'"
+            ? 'bg-black text-white border-black shadow-md'
+            : 'bg-transparent text-black/60 border-black/10 hover:border-black/30 hover:text-black/80'"
         >{{ cat }}</button>
       </div>
     </div>
 
     <!-- Sort & Filter bar -->
-    <div class="px-4 pb-4 max-w-6xl mx-auto flex items-center justify-between">
-      <span class="text-xs text-black/50">{{ filteredProducts.length }} items</span>
+    <div class="px-4 pb-4 max-w-6xl mx-auto flex items-center justify-between reveal">
+      <span class="text-xs font-bold text-black/50">{{ filteredProducts.length }} items</span>
       <div class="flex gap-2">
-        <select v-model="sortBy" class="text-xs border border-black/20 rounded-lg px-2 py-1 bg-white/80 focus:outline-none focus:border-[#C1121F]">
+        <select v-model="sortBy" class="text-xs border border-black/10 rounded-xl px-3 py-2 glass-panel focus:outline-none focus:border-[#C1121F] focus:ring-1 focus:ring-[#C1121F] hover:shadow-sm transition-all cursor-pointer">
           <option value="newest">Newest</option>
           <option value="price-asc">Price: Low to High</option>
           <option value="price-desc">Price: High to Low</option>
           <option value="popular">Most Popular</option>
         </select>
-        <button @click="showGrid = !showGrid" class="p-1 rounded-lg border border-black/20 bg-white/80 hover:bg-white transition-colors">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button @click="showGrid = !showGrid" class="p-2 rounded-xl border border-black/10 glass-panel hover:text-[#C1121F] transition-all hover:shadow-sm active:scale-95">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
             <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
           </svg>
@@ -70,28 +73,43 @@
           :class="`reveal-delay-${(i % 4) + 1}`"
         />
       </div>
-      <div v-if="filteredProducts.length === 0" class="text-center py-16 text-black/40">
-        <p class="text-4xl mb-3">🔍</p>
-        <p class="font-medium">No products found</p>
+      <div v-if="filteredProducts.length === 0" class="text-center py-20 reveal">
+        <div class="w-24 h-24 bg-gradient-to-br from-[#111111] to-[#333333] rounded-full mx-auto flex items-center justify-center text-5xl mb-6 shadow-lg shadow-black/20 transform hover:scale-110 transition-transform duration-300">
+          🔍
+        </div>
+        <p class="font-bold text-lg mb-1">No products found</p>
+        <p class="text-sm text-black/50 mb-6">Coba cari dengan kata kunci lain.</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import ProductCard from '@/components/ProductCard.vue'
 
 useScrollReveal()
 const route = useRoute()
+const router = useRouter()
 
 const searchQuery = ref(route.query.q || '')
 const activeTab = ref(route.query.type || 'all')
-const activeCategory = ref('All')
+const activeCategory = ref(route.query.category || 'All')
 const sortBy = ref('newest')
 const showGrid = ref(true)
+
+watch([activeTab, activeCategory, searchQuery], () => {
+  router.replace({
+    query: {
+      ...route.query,
+      type: activeTab.value !== 'all' ? activeTab.value : undefined,
+      category: activeCategory.value !== 'All' ? activeCategory.value : undefined,
+      q: searchQuery.value || undefined,
+    }
+  })
+}, { deep: true })
 
 const tabs = [
   { label: 'All', value: 'all' },

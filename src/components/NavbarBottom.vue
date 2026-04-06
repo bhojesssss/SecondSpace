@@ -12,7 +12,7 @@
           <component :is="item.icon" />
           <span
             v-if="item.badge"
-            class="absolute -top-1 -right-1 bg-[#C1121F] text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold"
+            class="absolute -top-1 -right-1 bg-gradient-to-br from-[#C1121F] to-[#780000] shadow-md shadow-[#C1121F]/40 text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold"
           >{{ item.badge }}</span>
         </div>
         <span class="text-[10px] mt-0.5 font-medium">{{ item.label }}</span>
