@@ -163,3 +163,51 @@ body {
     -webkit-backdrop-filter: blur(12px);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Neo-brutalist primitives
+   - 2px black border + hard offset shadow (no blur)
+   - "press in" interaction on hover/active (button settles into shadow)
+   ────────────────────────────────────────────────────────────────────────── */
+.brutal-cta {
+  border: 2px solid #111;
+  box-shadow: 4px 4px 0 0 #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.brutal-cta:hover:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 #111;
+}
+.brutal-cta:active:not(:disabled) {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 #111;
+}
+
+/* Smaller variant for compact UI (chips, icon buttons, navbar CTA) */
+.brutal-cta-sm {
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.brutal-cta-sm:hover:not(:disabled) {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
+}
+.brutal-cta-sm:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 0 #111;
+}
+
+/* Static surface (cards, panels) — same border/shadow, no press interaction */
+.brutal-surface {
+  border: 2px solid #111;
+  box-shadow: 4px 4px 0 0 #111;
+}
+.brutal-surface-sm {
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+}
+
+/* Brand-coloured shadow variants (alt accent — used on auth card) */
+.brutal-shadow-fashion { box-shadow: 4px 4px 0 0 #C1121F; }
+.brutal-shadow-sports  { box-shadow: 4px 4px 0 0 #003049; }

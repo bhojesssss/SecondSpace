@@ -3,7 +3,11 @@
 
     <!-- ═══════════════════════════════════════ FASHION CAROUSEL ═══════════════════════════════════════ -->
     <section class="section-gap">
-      <div class="carousel-wrapper relative rounded-2xl overflow-hidden shadow-xl" style="height: 300px;">
+      <div
+        class="carousel-wrapper relative rounded-2xl overflow-hidden carousel-h"
+        @touchstart.passive="fashionSwipe.start"
+        @touchend.passive="fashionSwipe.end"
+      >
         <div
           class="carousel-track flex h-full transition-transform duration-600 ease-in-out"
           :style="{ transform: `translateX(-${fashionIndex * 100}%)` }"
@@ -17,9 +21,9 @@
             />
             <!-- gradient overlay: left readable, right fades to image -->
             <div class="absolute inset-0" style="background: linear-gradient(to right, #780000 42%, #78000099 62%, transparent 80%);"></div>
-            <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-12 z-10">
+            <div class="absolute inset-0 flex flex-col justify-center px-7 sm:px-12 md:px-16 py-7 sm:py-9 md:py-10 z-10">
               <p class="text-[#FDF0D5]/70 text-xs font-semibold tracking-[0.2em] uppercase mb-2">Fashion · Thrift</p>
-              <h2 class="text-white text-4xl md:text-5xl leading-tight mb-4" style="font-family: 'CalSans', serif;">
+              <h2 class="text-white text-3xl sm:text-4xl md:text-5xl leading-tight mb-4" style="font-family: 'CalSans', serif;">
                 Thrifting<br/>easier with us.
               </h2>
               <button
@@ -39,9 +43,9 @@
               alt="Good Fashion banner"
             />
             <div class="absolute inset-0" style="background: linear-gradient(to right, #C1121F 38%, #C1121F99 58%, transparent 76%);"></div>
-            <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-12 z-10">
+            <div class="absolute inset-0 flex flex-col justify-center px-7 sm:px-12 md:px-16 py-7 sm:py-9 md:py-10 z-10">
               <p class="text-[#FDF0D5]/70 text-xs font-semibold tracking-[0.2em] uppercase mb-2">Style · Value</p>
-              <h2 class="text-white text-4xl md:text-5xl leading-tight mb-2" style="font-family: 'CalSans', serif;">
+              <h2 class="text-white text-3xl sm:text-4xl md:text-5xl leading-tight mb-2" style="font-family: 'CalSans', serif;">
                 Good Fashion
               </h2>
               <p class="text-white/75 text-base mb-4">Without Overprice.</p>
@@ -62,9 +66,9 @@
               alt="Be Yourself banner"
             />
             <div class="absolute inset-0" style="background: linear-gradient(to right, #780000 40%, #78000099 60%, transparent 78%);"></div>
-            <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-12 z-10">
+            <div class="absolute inset-0 flex flex-col justify-center px-7 sm:px-12 md:px-16 py-7 sm:py-9 md:py-10 z-10">
               <p class="text-[#FDF0D5]/70 text-xs font-semibold tracking-[0.2em] uppercase mb-2">Express · Yourself</p>
-              <h2 class="text-white text-4xl md:text-5xl leading-tight mb-4" style="font-family: 'CalSans', serif;">
+              <h2 class="text-white text-3xl sm:text-4xl md:text-5xl leading-tight mb-4" style="font-family: 'CalSans', serif;">
                 Be Yourself.
               </h2>
               <button
@@ -134,7 +138,11 @@
 
     <!-- ═══════════════════════════════════════ SPORTS CAROUSEL ═══════════════════════════════════════ -->
     <section class="section-gap reveal reveal-delay-2">
-      <div class="carousel-wrapper relative rounded-2xl overflow-hidden shadow-xl" style="height: 300px;">
+      <div
+        class="carousel-wrapper relative rounded-2xl overflow-hidden carousel-h"
+        @touchstart.passive="sportsSwipe.start"
+        @touchend.passive="sportsSwipe.end"
+      >
         <div
           class="carousel-track flex h-full transition-transform duration-600 ease-in-out"
           :style="{ transform: `translateX(-${sportsIndex * 100}%)` }"
@@ -147,9 +155,9 @@
               alt="Sports banner"
             />
             <div class="absolute inset-0" style="background: linear-gradient(to right, #003049 42%, #00304999 62%, transparent 80%);"></div>
-            <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-12 z-10">
+            <div class="absolute inset-0 flex flex-col justify-center px-7 sm:px-12 md:px-16 py-7 sm:py-9 md:py-10 z-10">
               <p class="text-[#FDF0D5]/70 text-xs font-semibold tracking-[0.2em] uppercase mb-2">Sports · Thrift</p>
-              <h2 class="text-white text-4xl md:text-5xl leading-tight mb-4" style="font-family: 'CalSans', serif;">
+              <h2 class="text-white text-3xl sm:text-4xl md:text-5xl leading-tight mb-4" style="font-family: 'CalSans', serif;">
                 Play More,<br/>
                 <span class="text-[#669BBC]">Pay Less.</span>
               </h2>
@@ -170,9 +178,9 @@
               alt="Sports banner 2"
             />
             <div class="absolute inset-0" style="background: linear-gradient(to right, #669BBC 40%, #669BBC99 60%, transparent 78%);"></div>
-            <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-12 z-10">
+            <div class="absolute inset-0 flex flex-col justify-center px-7 sm:px-12 md:px-16 py-7 sm:py-9 md:py-10 z-10">
               <p class="text-[#FDF0D5]/70 text-xs font-semibold tracking-[0.2em] uppercase mb-2">Gear Up · Perform</p>
-              <h2 class="text-white text-4xl md:text-5xl leading-tight mb-2" style="font-family: 'CalSans', serif;">
+              <h2 class="text-white text-3xl sm:text-4xl md:text-5xl leading-tight mb-2" style="font-family: 'CalSans', serif;">
                 Move Without<br/>Limits
               </h2>
               <p class="text-white/75 text-base mb-4">Premium sports gear, thrifted.</p>
@@ -193,9 +201,9 @@
               alt="Sports banner 3"
             />
             <div class="absolute inset-0" style="background: linear-gradient(to right, #003049 42%, #00304999 62%, transparent 80%);"></div>
-            <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-12 z-10">
+            <div class="absolute inset-0 flex flex-col justify-center px-7 sm:px-12 md:px-16 py-7 sm:py-9 md:py-10 z-10">
               <p class="text-[#FDF0D5]/70 text-xs font-semibold tracking-[0.2em] uppercase mb-2">Trending · Now</p>
-              <h2 class="text-white text-4xl md:text-5xl leading-tight mb-2" style="font-family: 'CalSans', serif;">
+              <h2 class="text-white text-3xl sm:text-4xl md:text-5xl leading-tight mb-2" style="font-family: 'CalSans', serif;">
                 Trending Sports
               </h2>
               <p class="text-white/60 text-xs tracking-widest uppercase mb-4">Running · Padel · Basketball · Football</p>
@@ -245,9 +253,15 @@
           <span class="chip-label">{{ cat.label }}</span>
         </router-link>
       </div>
+    </section>
 
-      <!-- Sports product cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
+    <!-- ══════════════════════════════════ RECOMMENDED FOR YOU (SPORTS) ══════════════════════════════════ -->
+    <section class="section-gap reveal reveal-delay-4">
+      <div class="section-title-wrap">
+        <div class="section-accent sports-accent"></div>
+        <h3 class="section-title">Recommended for You</h3>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         <ProductCard
           v-for="(product, i) in sportsProducts"
           :key="i"
@@ -279,6 +293,27 @@ const sportsIndex = ref(0)
 let sportsTimer = null
 const nextSports = () => { sportsIndex.value = (sportsIndex.value + 1) % 3 }
 const prevSports = () => { sportsIndex.value = (sportsIndex.value + 2) % 3 }
+
+// ── Swipe handlers (mobile/touch) ─────────────────────────────────────────────
+const createSwipeHandlers = (onPrev, onNext) => {
+  let startX = 0, startY = 0
+  return {
+    start: (e) => {
+      startX = e.changedTouches[0].screenX
+      startY = e.changedTouches[0].screenY
+    },
+    end: (e) => {
+      const dx = e.changedTouches[0].screenX - startX
+      const dy = e.changedTouches[0].screenY - startY
+      // Require predominantly horizontal swipe of at least 50px to avoid
+      // triggering on vertical scrolls / accidental drags.
+      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
+      dx < 0 ? onNext() : onPrev()
+    },
+  }
+}
+const fashionSwipe = createSwipeHandlers(prevFashion, nextFashion)
+const sportsSwipe = createSwipeHandlers(prevSports, nextSports)
 
 onMounted(() => {
   fashionTimer = setInterval(nextFashion, 4000)
@@ -339,6 +374,7 @@ const sportsProducts = [
 /* ── Root & spacing ─────────────────────────────────────────────────────────── */
 .home-root {
   @apply pb-8;
+  padding: 1rem;
 }
 .section-gap {
   @apply mb-10;
@@ -364,7 +400,17 @@ const sportsProducts = [
 
 /* ── Carousel ───────────────────────────────────────────────────────────────── */
 .carousel-wrapper {
-  /* ensures the overflow-hidden clips properly */
+  border: 2px solid #111;
+  box-shadow: 6px 6px 0 0 #111;
+}
+.carousel-h {
+  height: 240px;
+}
+@media (min-width: 640px) {
+  .carousel-h { height: 280px; }
+}
+@media (min-width: 768px) {
+  .carousel-h { height: 300px; }
 }
 .carousel-track {
   will-change: transform;
@@ -376,13 +422,26 @@ const sportsProducts = [
 /* ── Carousel arrows ─────────────────────────────────────────────────────────── */
 .carousel-arrow {
   @apply absolute top-1/2 -translate-y-1/2 z-20
-         w-9 h-9 rounded-full
+         w-9 h-9 rounded-lg
          bg-white/20 backdrop-blur-sm text-white
          flex items-center justify-center
          text-base font-bold
          border border-white/20
+         opacity-0
          hover:bg-white/40 hover:scale-110
          transition-all duration-200;
+  pointer-events: none;
+}
+.carousel-wrapper:hover .carousel-arrow,
+.carousel-arrow:focus-visible {
+  @apply opacity-100;
+  pointer-events: auto;
+}
+/* Touch-only devices: hide arrows entirely, swipe replaces them. */
+@media (hover: none) {
+  .carousel-arrow {
+    display: none;
+  }
 }
 
 /* ── Dots ───────────────────────────────────────────────────────────────────── */
@@ -397,20 +456,46 @@ const sportsProducts = [
   @apply bg-white/40 w-2 hover:bg-white/70;
 }
 
-/* ── CTA buttons ─────────────────────────────────────────────────────────────── */
+/* ── CTA buttons (brutalist) ─────────────────────────────────────────────────── */
 .cta-btn {
-  @apply w-fit px-5 py-2.5 text-sm font-bold rounded-full
-         transition-all duration-200
-         hover:scale-105 hover:shadow-lg;
+  @apply w-fit px-5 py-2.5 text-sm font-bold rounded-xl;
+  border: 2px solid #111;
+  box-shadow: 4px 4px 0 0 #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.cta-btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 #111;
+}
+.cta-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 #111;
 }
 .fashion-cta {
-  @apply bg-white text-[#C1121F] hover:bg-[#FDF0D5];
+  @apply bg-white text-[#C1121F];
+}
+.fashion-cta:hover {
+  @apply bg-[#FDF0D5];
 }
 .sports-cta {
-  @apply bg-[#669BBC] text-white hover:bg-[#003049];
+  @apply bg-[#669BBC] text-white;
+}
+.sports-cta:hover {
+  @apply bg-[#669BBC];
 }
 .sports-dark-cta {
-  @apply bg-[#003049] text-white hover:bg-[#001f30];
+  @apply bg-[#003049] text-white;
+}
+
+/* ── Category chips (brutalist frame) ────────────────────────────────────────── */
+.chip-icon {
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.chip-link:hover .chip-icon {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
 }
 
 /* ── Category chips ──────────────────────────────────────────────────────────── */
@@ -426,9 +511,7 @@ const sportsProducts = [
   @apply flex-shrink-0 flex flex-col items-center gap-2 no-underline;
 }
 .chip-icon {
-  @apply w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden shadow-md
-         transition-all duration-200
-         hover:scale-110 hover:shadow-xl;
+  @apply w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center overflow-hidden;
 }
 .fashion-chip {
   background: linear-gradient(135deg, #C1121F, #780000);
