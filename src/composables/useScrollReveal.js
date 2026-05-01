@@ -1,10 +1,11 @@
 import { onMounted, onUnmounted } from 'vue'
 
 export function useScrollReveal() {
-  let observer = null
+  let intersectionObserver = null
+  let mutationObserver = null
 
   onMounted(() => {
-    observer = new IntersectionObserver(
+    intersectionObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -15,14 +16,20 @@ export function useScrollReveal() {
       { threshold: 0.05, rootMargin: '0px 0px -10px 0px' },
     )
 
-    setTimeout(() => {
-      document.querySelectorAll('.reveal').forEach((el) => {
-        observer.observe(el)
+    const observeAll = () => {
+      document.querySelectorAll('.reveal:not(.visible)').forEach((el) => {
+        intersectionObserver.observe(el)
       })
-    }, 100)
+    }
+
+    setTimeout(observeAll, 100)
+
+    mutationObserver = new MutationObserver(observeAll)
+    mutationObserver.observe(document.body, { childList: true, subtree: true })
   })
 
   onUnmounted(() => {
-    observer?.disconnect()
+    intersectionObserver?.disconnect()
+    mutationObserver?.disconnect()
   })
 }

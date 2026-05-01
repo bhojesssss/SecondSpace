@@ -35,9 +35,44 @@ const router = createRouter({
       component: () => import('@/views/NotificationView.vue'),
     },
     {
+      path: '/notifications/:id',
+      name: 'notification-detail',
+      component: () => import('@/views/NotificationDetailView.vue'),
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/ProfileView.vue'),
+    },
+    {
+      path: '/profile/history',
+      name: 'profile-history',
+      component: () => import('@/views/PurchaseHistoryView.vue'),
+    },
+    {
+      path: '/profile/sell',
+      name: 'profile-sell',
+      component: () => import('@/views/SellItemView.vue'),
+    },
+    {
+      path: '/profile/edit',
+      name: 'profile-edit',
+      component: () => import('@/views/EditProfileView.vue'),
+    },
+    {
+      path: '/profile/address',
+      name: 'profile-address',
+      component: () => import('@/views/AddressView.vue'),
+    },
+    {
+      path: '/profile/help',
+      name: 'profile-help',
+      component: () => import('@/views/HelpView.vue'),
+    },
+    {
+      path: '/profile/terms',
+      name: 'profile-terms',
+      component: () => import('@/views/TermsView.vue'),
     },
     {
       path: '/login',
