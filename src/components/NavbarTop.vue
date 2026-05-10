@@ -13,11 +13,11 @@
             v-model="searchQuery"
             type="text"
             placeholder="Search Bar"
-            class="w-full h-9 pl-4 pr-10 rounded-xl border border-black/20 bg-white/80 text-sm font-body focus:outline-none focus:border-[#C1121F] transition-colors"
+            class="search-input"
             @keyup.enter="handleSearch"
           />
-          <button class="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 hover:text-[#C1121F] transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="search-btn" @click="handleSearch" aria-label="Search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
           </button>
@@ -101,6 +101,32 @@ const handleSearch = () => {
 
 .nav-icon-btn {
   @apply p-1.5 rounded-lg hover:bg-black/5 transition-all duration-200 text-black/70 hover:text-black cursor-pointer flex items-center justify-center;
+}
+
+/* Brutalist search bar */
+.search-input {
+  @apply w-full h-9 pl-4 pr-10 rounded-xl bg-white text-sm font-body outline-none;
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.search-input::placeholder {
+  @apply text-black/40;
+}
+.search-input:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 0 #111;
+}
+.search-input:focus {
+  border-color: #C1121F;
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
+}
+.search-btn {
+  @apply absolute right-2.5 top-1/2 -translate-y-1/2 text-black/60 hover:text-[#C1121F] transition-colors cursor-pointer;
+}
+.search-input:focus ~ .search-btn {
+  @apply text-[#C1121F];
 }
 
 /* Auth buttons (logged-out state) */

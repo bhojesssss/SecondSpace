@@ -64,14 +64,35 @@
               v-for="c in categories"
               :key="c"
               type="button"
-              @click="form.category = c"
+              @click="setCategory(c)"
               class="seg-btn"
-              :class="form.category === c ? 'seg-active' : 'seg-inactive'"
+              :class="getCategoryClass(c)"
             >
               {{ c }}
             </button>
           </div>
         </div>
+
+        <!-- Subcategory chips (color-coded to parent) -->
+        <transition name="subcat-fade" mode="out-in">
+          <div v-if="form.category" :key="form.category" class="field">
+            <label class="field-label">
+              Subkategori {{ form.category }}
+            </label>
+            <div class="subcat-track scrollbar-hide">
+              <button
+                v-for="s in activeSubcategories"
+                :key="s"
+                type="button"
+                @click="form.subcategory = s"
+                class="subcat-chip"
+                :class="getSubcatClass(s)"
+              >
+                {{ s }}
+              </button>
+            </div>
+          </div>
+        </transition>
       </section>
 
       <!-- ═══════════════════════════════════════ KONDISI & UKURAN ═══════════════════════════════════════ -->
@@ -154,7 +175,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
@@ -170,17 +191,40 @@ const goBack = () => {
 }
 
 const categories = ['Fashion', 'Sports']
+const fashionSubcats = ['T-Shirts', 'Hoodies', 'Jackets', 'Pants', 'Shorts', 'Shoes', 'Bags', 'Accessories']
+const sportsSubcats = ['Running', 'Basketball', 'Football', 'Padel', 'Gym']
 const conditions = ['Baru', 'Like New', 'Bekas Layak']
 const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 
 const form = reactive({
   name: '',
   category: 'Fashion',
+  subcategory: '',
   condition: 'Like New',
   size: 'M',
   price: null,
   description: '',
 })
+
+const activeSubcategories = computed(() =>
+  form.category === 'Sports' ? sportsSubcats : fashionSubcats
+)
+
+const setCategory = (c) => {
+  if (form.category === c) return
+  form.category = c
+  form.subcategory = ''
+}
+
+const getCategoryClass = (c) => {
+  if (form.category !== c) return 'seg-inactive'
+  return c === 'Sports' ? 'seg-active-sports' : 'seg-active'
+}
+
+const getSubcatClass = (s) => {
+  if (form.subcategory !== s) return 'subcat-inactive'
+  return form.category === 'Sports' ? 'subcat-active-sports' : 'subcat-active-fashion'
+}
 
 const images = ref([null, null, null, null])
 
@@ -322,12 +366,64 @@ const handleSubmit = () => {
   background: linear-gradient(135deg, #C1121F, #780000);
   box-shadow: 2px 2px 0 0 #111;
 }
+.seg-active-sports {
+  @apply text-white;
+  background: linear-gradient(135deg, #669BBC, #003049);
+  box-shadow: 2px 2px 0 0 #111;
+}
 .seg-inactive {
   @apply bg-white text-black/70;
 }
 .seg-inactive:hover {
   background: #FDF0D5;
 }
+
+/* ── Subcategory chips ────────────────────────────────────────────────────── */
+.subcat-track {
+  @apply flex flex-wrap gap-2;
+}
+.subcat-chip {
+  @apply flex-shrink-0 px-3.5 py-1.5 text-[11px] font-bold rounded-lg bg-white text-black/70;
+  border: 2px solid #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.subcat-inactive:hover {
+  @apply text-black;
+  background: #FDF0D5;
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 0 #111;
+}
+.subcat-active-fashion,
+.subcat-active-sports {
+  @apply text-white;
+  box-shadow: 3px 3px 0 0 #111;
+}
+.subcat-active-fashion:hover,
+.subcat-active-sports:hover {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
+}
+.subcat-active-fashion {
+  background: linear-gradient(135deg, #C1121F, #780000);
+}
+.subcat-active-sports {
+  background: linear-gradient(135deg, #669BBC, #003049);
+}
+
+/* Subcategory swap animation */
+.subcat-fade-enter-active,
+.subcat-fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.subcat-fade-enter-from,
+.subcat-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* Hide horizontal scrollbar if subcat row overflows */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ── Price input ──────────────────────────────────────────────────────────── */
 .price-input-wrap {

@@ -142,7 +142,7 @@
             </div>
           </div>
 
-          <button class="checkout-btn">
+          <button @click="checkout" class="checkout-btn">
             Checkout Sekarang
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <line x1="5" y1="12" x2="19" y2="12" />
@@ -168,12 +168,16 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
+import { useTransaction } from '@/composables/useTransaction'
 import AuthGate from '@/components/AuthGate.vue'
 useScrollReveal()
 
+const router = useRouter()
 const { isLoggedIn } = useAuth()
+const { setItems } = useTransaction()
 
 const cartItems = ref([
   { id: 1, name: 'Insurgent Graphic Tee', price: 499000, size: 'L', condition: 'Like New', qty: 1, img: new URL('@/assets/ImgCard/insurgent.jpeg', import.meta.url).href },
@@ -184,6 +188,11 @@ const subtotal = computed(() => cartItems.value.reduce((sum, item) => sum + item
 const totalQty = computed(() => cartItems.value.reduce((sum, item) => sum + item.qty, 0))
 const formatPrice = (price) => price.toLocaleString('id-ID')
 const removeItem = (id) => { cartItems.value = cartItems.value.filter(i => i.id !== id) }
+const checkout = () => {
+  if (cartItems.value.length === 0) return
+  setItems(cartItems.value, 'cart')
+  router.push('/transaction')
+}
 </script>
 
 <style scoped>

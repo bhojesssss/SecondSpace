@@ -113,10 +113,12 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
+import { useTransaction } from '@/composables/useTransaction'
 
 useScrollReveal()
 const router = useRouter()
 const { isLoggedIn } = useAuth()
+const { setItems } = useTransaction()
 
 const isWishlisted = ref(false)
 const selectedSize = ref('M')
@@ -147,7 +149,16 @@ const buyNow = () => {
     router.push('/login')
     return
   }
-  router.push('/cart')
+  setItems([{
+    id: product.value.id,
+    name: product.value.name,
+    price: product.value.price,
+    img: product.value.img,
+    size: selectedSize.value,
+    condition: selectedCondition.value,
+    qty: 1,
+  }], 'buy-now')
+  router.push('/transaction')
 }
 </script>
 
