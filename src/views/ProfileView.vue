@@ -45,7 +45,7 @@
             <span class="hero-stat-divider"></span>
             <span class="hero-stat-text">5 Ulasan</span>
           </div>
-          <button class="hero-edit-btn">Edit Profile</button>
+          <router-link to="/profile/edit" class="hero-edit-btn">Edit Profile</router-link>
         </div>
       </div>
 

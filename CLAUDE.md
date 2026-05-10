@@ -8,7 +8,7 @@ Vue 3 + Vite + Tailwind v4 SPA for buying/selling preloved fashion & sports gear
 - Vue Router (SPA, `createWebHistory`)
 - Vite (build)
 - Tailwind CSS v4 — scoped styles use `@reference "../assets/main.css"` to access utilities + `glass-panel`
-- No state management library yet (refs/computed inside views)
+- Shared state via Vue composables (no Pinia/Vuex) — `useAuth`, `useNotifications` keep reactive refs at module scope so multiple views share the same source of truth
 
 ## Design Philosophy
 
@@ -50,6 +50,19 @@ Both fonts loaded via `@font-face` in `src/assets/main.css`. Use inline `style="
 - Sections grouped with `class="section-gap"` (mb-6 to mb-10) and `reveal` for scroll animations
 - Section heading pattern: `section-title-wrap` (flex + gap-3) containing `section-accent` (vertical w-1 colored bar) + `<h1/h3>` (CalSans)
 - Do NOT add `max-w-*` constraints in views — `<main>` in `App.vue` constrains via `max-w-5xl`
+
+**Subpage header pattern** (used by profile sub-views, notification detail, anything not reachable from the bottom nav):
+
+- Header row = `back-btn` + `section-accent` + `page-title` on a single flex row (gap-3)
+- Back button: `w-9 h-9 rounded-lg`, white bg, 2px black border, 2px offset shadow, hover tints to `#C1121F` and shrinks shadow to 1px
+- Back handler uses `router.back()` with a `router.push('<parent>')` fallback so deep-linked entries still work:
+  ```js
+  const goBack = () => {
+    if (window.history.state?.back) router.back()
+    else router.push('/profile')
+  }
+  ```
+- Auth-required subpages wrap content in `<AuthGate v-if="!isLoggedIn" .../>` then `<template v-else>...</template>` (same shape as ChatView / NotificationView)
 
 ## Button Shapes (strict)
 
@@ -96,10 +109,16 @@ When a scoped style needs custom hover/colors, replicate the pattern locally: `b
 ## Files of Interest
 
 - `src/assets/main.css` — theme tokens, fonts, `glass-panel`, scroll reveal classes
-- `src/composables/useScrollReveal.js` — call `useScrollReveal()` at top of every view's `<script setup>`
+- `src/composables/useScrollReveal.js` — call `useScrollReveal()` at top of every view's `<script setup>`. Uses IntersectionObserver + a MutationObserver on `document.body`, so `.reveal` elements added later (e.g. via `v-if` toggles) are auto-observed and fade in correctly
+- `src/composables/useAuth.js` — module-level `user` ref + `isLoggedIn` computed, `login()` / `logout()` helpers
+- `src/composables/useNotifications.js` — module-level `notifications` ref shared between `NotificationView` (list) and `NotificationDetailView` (drilldown). Provides `unreadCount`, `getById(id)`, `markAsRead(id)`, `markAllRead()`. Detail view calls `markAsRead` in `onMounted` so returning to the list shows the updated read state
 - `src/components/ProductCard.vue` — reusable card
+- `src/components/AuthGate.vue` — login wall used by every auth-required view
 - `src/components/NavbarTop.vue` (desktop) / `NavbarBottom.vue` (mobile)
 - `src/views/HomeView.vue` — primary design reference for new pages
+- `src/views/ProfileView.vue` — hub page; menu groups link out to the profile sub-views below
+- Profile sub-views — `PurchaseHistoryView.vue`, `SellItemView.vue`, `EditProfileView.vue`, `AddressView.vue`, `HelpView.vue`, `TermsView.vue`. All follow the **Subpage header pattern**
+- `src/views/NotificationDetailView.vue` — `/notifications/:id`, type-aware hero card + meta + action CTA pulled from `notif.link` / `notif.linkLabel`
 - `src/App.vue` — root layout; switches navbar on `md` breakpoint, hides navbars on auth routes
 - `src/router/index.js` — route definitions
 
@@ -108,7 +127,7 @@ When a scoped style needs custom hover/colors, replicate the pattern locally: `b
 - Mobile-first: NavbarBottom on mobile, NavbarTop on desktop, switch at `md` (768px)
 - Use `useScrollReveal()` + `class="reveal"` (and `reveal-delay-1..4`) on top-level sections for fade-in
 - Format prices with `price.toLocaleString('id-ID')` — typically a `formatPrice` helper per view
-- Use `<router-link>` for internal nav, never raw `<a>`
+- Use `<router-link>` for internal nav, never raw `<a>`. When wrapping a whole card/list-item in `<router-link>`, add `no-underline text-inherit` to its class so the default `<a>` blue + underline doesn't bleed through (see `NotificationView.vue` `.notif-item`)
 - Auth pages (login/register) hide both navbars (handled in `App.vue` via `isAuthPage` check)
 
 ## Responsive / Mobile

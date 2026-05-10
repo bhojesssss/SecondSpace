@@ -43,10 +43,10 @@
 
     <!-- ═══════════════════════════════════════ NOTIFICATIONS ═══════════════════════════════════════ -->
     <div v-else class="notif-list">
-      <div
+      <router-link
         v-for="(notif, idx) in notifications"
         :key="notif.id"
-        @click="notif.read = true"
+        :to="`/notifications/${notif.id}`"
         class="notif-item"
         :class="[notif.read ? 'notif-read' : 'notif-unread glass-panel', `reveal reveal-delay-${(idx % 4) + 1}`]"
       >
@@ -59,7 +59,7 @@
           <p class="notif-time">{{ notif.time }}</p>
         </div>
         <div v-if="!notif.read" class="notif-dot"></div>
-      </div>
+      </router-link>
     </div>
     </template>
 
@@ -67,27 +67,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
+import { useNotifications } from '@/composables/useNotifications'
 import AuthGate from '@/components/AuthGate.vue'
 useScrollReveal()
 
 const { isLoggedIn } = useAuth()
-
-const notifications = ref([
-  { id: 1, type: 'order', icon: '📦', title: 'Pesanan Dikonfirmasi', message: 'Insurgent Graphic Tee sudah dikonfirmasi penjual', time: '5 menit lalu', read: false },
-  { id: 2, type: 'promo', icon: '🏷️', title: 'Flash Sale Fashion!', message: 'Diskon hingga 50% untuk koleksi fashion hari ini', time: '1 jam lalu', read: false },
-  { id: 3, type: 'chat',  icon: '💬', title: 'Pesan Baru', message: 'SecondSeller: Oke kak, barang sudah disiapkan', time: '2 jam lalu', read: false },
-  { id: 4, type: 'promo', icon: '⚽', title: 'Sports Week', message: 'Koleksi olahraga terbaru sudah hadir!', time: '1 hari lalu', read: true },
-  { id: 5, type: 'order', icon: '✅', title: 'Ulasan Berhasil', message: 'Terima kasih sudah memberikan ulasan!', time: '2 hari lalu', read: true },
-])
-
-const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
-
-const markAllRead = () => {
-  notifications.value.forEach(n => { n.read = true })
-}
+const { notifications, unreadCount, markAllRead } = useNotifications()
 
 const iconClass = (type) => {
   if (type === 'promo') return 'icon-sports'
@@ -173,7 +160,7 @@ const iconClass = (type) => {
   @apply flex flex-col gap-4;
 }
 .notif-item {
-  @apply flex gap-3 sm:gap-4 p-3 sm:p-5 rounded-2xl cursor-pointer;
+  @apply flex gap-3 sm:gap-4 p-3 sm:p-5 rounded-2xl cursor-pointer no-underline text-inherit;
   border: 2px solid #111;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }

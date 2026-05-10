@@ -25,6 +25,7 @@ coverage
 *.sln
 *.sw?
 CLAUDE.md
+.env
 
 *.tsbuildinfo
 

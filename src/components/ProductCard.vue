@@ -18,8 +18,8 @@
       </button>
     </div>
     <!-- Info -->
-    <div class="mt-2 px-1">
-      <div class="flex items-center justify-between">
+    <div class="card-info">
+      <div class="flex items-center justify-between gap-2">
         <span class="card-price">Rp {{ formatPrice(product.price) }}</span>
         <span class="card-size">{{ product.size }}</span>
       </div>
@@ -66,17 +66,20 @@ const formatPrice = (price) => price.toLocaleString('id-ID')
          transition-colors duration-200;
   border: 1.5px solid #111;
 }
+.card-info {
+  @apply mt-3 px-0.5;
+}
 .card-price {
-  @apply text-xs font-bold text-[#C1121F];
+  @apply text-sm sm:text-base font-bold text-[#C1121F] leading-none;
   font-family: 'CalSans', serif;
 }
 .card-size {
-  @apply text-[10px] font-bold text-black/50 uppercase tracking-wider;
+  @apply text-[10px] sm:text-[11px] font-bold text-black/50 uppercase tracking-wider flex-shrink-0;
 }
 .card-name {
-  @apply text-[11px] font-semibold text-black/70 mt-0.5 truncate;
+  @apply text-[13px] sm:text-sm font-semibold text-black/80 mt-1.5 truncate leading-snug;
 }
 .card-sold {
-  @apply text-[10px] text-black/40;
+  @apply text-[11px] sm:text-xs text-black/45 mt-1;
 }
 </style>

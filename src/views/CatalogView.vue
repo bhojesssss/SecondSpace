@@ -72,12 +72,63 @@
     <section class="sort-bar reveal">
       <span class="items-count">{{ filteredProducts.length }} items</span>
       <div class="flex gap-2">
-        <select v-model="sortBy" class="sort-select glass-panel">
-          <option value="newest">Newest</option>
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
-          <option value="popular">Most Popular</option>
-        </select>
+        <!-- Custom brutalist dropdown -->
+        <div class="sort-dd" ref="sortDdRef">
+          <button
+            type="button"
+            class="sort-trigger"
+            :class="{ 'is-open': sortOpen }"
+            @click="sortOpen = !sortOpen"
+            aria-haspopup="listbox"
+            :aria-expanded="sortOpen"
+          >
+            <span class="sort-trigger-label">{{ activeSortLabel }}</span>
+            <svg
+              class="sort-chevron"
+              :class="{ 'is-open': sortOpen }"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          <transition name="sort-pop">
+            <ul v-if="sortOpen" class="sort-menu" role="listbox">
+              <li
+                v-for="opt in sortOptions"
+                :key="opt.value"
+                role="option"
+                :aria-selected="sortBy === opt.value"
+                class="sort-option"
+                :class="{ 'is-active': sortBy === opt.value }"
+                @click="selectSort(opt.value)"
+              >
+                <span>{{ opt.label }}</span>
+                <svg
+                  v-if="sortBy === opt.value"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </li>
+            </ul>
+          </transition>
+        </div>
+
         <button
           @click="showGrid = !showGrid"
           class="view-btn glass-panel"
@@ -157,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import ProductCard from '@/components/ProductCard.vue'
@@ -171,6 +222,38 @@ const activeTab = ref(route.query.type || 'all')
 const activeCategory = ref(route.query.category || 'All')
 const sortBy = ref('newest')
 const showGrid = ref(true)
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'price-asc', label: 'Price: Low to High' },
+  { value: 'price-desc', label: 'Price: High to Low' },
+  { value: 'popular', label: 'Most Popular' },
+]
+const sortOpen = ref(false)
+const sortDdRef = ref(null)
+const activeSortLabel = computed(
+  () => sortOptions.find(o => o.value === sortBy.value)?.label || 'Sort'
+)
+const selectSort = (value) => {
+  sortBy.value = value
+  sortOpen.value = false
+}
+const handleClickOutside = (e) => {
+  if (sortOpen.value && sortDdRef.value && !sortDdRef.value.contains(e.target)) {
+    sortOpen.value = false
+  }
+}
+const handleEsc = (e) => {
+  if (e.key === 'Escape') sortOpen.value = false
+}
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  document.addEventListener('keydown', handleEsc)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleEsc)
+})
 
 watch([activeTab, activeCategory, searchQuery], () => {
   router.replace({
@@ -372,22 +455,91 @@ const filteredProducts = computed(() => {
 
 /* ── Sort / view bar (brutalist) ───────────────────────────────────────────── */
 .sort-bar {
-  @apply flex items-center justify-between mb-5 gap-3;
+  @apply flex items-center justify-between mb-5 gap-3 relative;
+  z-index: 30;
 }
 .items-count {
   @apply text-xs font-bold text-black/60 uppercase tracking-wider;
 }
-.sort-select {
-  @apply text-sm rounded-xl px-4 py-2 cursor-pointer outline-none transition-colors duration-200;
+/* Custom brutalist dropdown */
+.sort-dd {
+  @apply relative;
+}
+.sort-trigger {
+  @apply flex items-center justify-between gap-2 text-sm font-bold rounded-xl px-4 py-2
+         bg-white text-black cursor-pointer outline-none;
+  min-width: 168px;
   border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
-.sort-select:focus {
+.sort-trigger:hover {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
+}
+.sort-trigger.is-open {
   border-color: #C1121F;
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
 }
+.sort-trigger-label {
+  @apply truncate;
+}
+.sort-chevron {
+  @apply flex-shrink-0 text-black/70;
+  transition: transform 0.2s ease;
+}
+.sort-chevron.is-open {
+  transform: rotate(180deg);
+  color: #C1121F;
+}
+.sort-menu {
+  @apply absolute right-0 top-full mt-2 w-56 rounded-xl bg-white overflow-hidden;
+  border: 2px solid #111;
+  box-shadow: 4px 4px 0 0 #111;
+  z-index: 40;
+  list-style: none;
+  padding: 0.25rem;
+  margin-left: 0;
+}
+.sort-option {
+  @apply flex items-center justify-between text-sm font-semibold text-black/80
+         px-3 py-2.5 rounded-lg cursor-pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.sort-option:hover {
+  @apply bg-[#FDF0D5] text-black;
+}
+.sort-option.is-active {
+  background: linear-gradient(135deg, #C1121F, #780000);
+  @apply text-white;
+}
+.sort-option.is-active:hover {
+  @apply text-white;
+}
+
+/* Dropdown pop animation */
+.sort-pop-enter-active,
+.sort-pop-leave-active {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  transform-origin: top right;
+}
+.sort-pop-enter-from,
+.sort-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96) translateY(-4px);
+}
+
 .view-btn {
   @apply w-10 h-10 rounded-xl flex items-center justify-center
-         text-black/70 hover:text-[#C1121F] transition-colors duration-200;
+         bg-white text-black/70 hover:text-[#C1121F] cursor-pointer;
   border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.view-btn:hover {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
 }
 
 /* ── Empty state ───────────────────────────────────────────────────────────── */
