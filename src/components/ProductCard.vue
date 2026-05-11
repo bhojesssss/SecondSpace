@@ -31,14 +31,35 @@
 
 <script setup>
 import { ref } from 'vue'
+import api from '@/services/api'
 
 const props = defineProps({
   product: { type: Object, required: true }
 })
 
 const isWishlisted = ref(false)
-const toggleWishlist = () => { isWishlisted.value = !isWishlisted.value }
-const formatPrice = (price) => price.toLocaleString('id-ID')
+const toggling = ref(false)
+
+const toggleWishlist = async () => {
+  if (toggling.value || !props.product.id) return
+  toggling.value = true
+  const wasWishlisted = isWishlisted.value
+  isWishlisted.value = !isWishlisted.value
+  try {
+    if (wasWishlisted) {
+      await api.delete(`/wishlist/${props.product.id}`)
+    } else {
+      await api.post(`/wishlist/${props.product.id}`)
+    }
+  } catch (e) {
+    isWishlisted.value = wasWishlisted
+    console.error('Wishlist toggle failed:', e.message)
+  } finally {
+    toggling.value = false
+  }
+}
+
+const formatPrice = (price) => (price || 0).toLocaleString('id-ID')
 </script>
 
 <style scoped>
