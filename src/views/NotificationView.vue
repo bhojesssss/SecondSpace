@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useNotifications } from '@/composables/useNotifications'
 
@@ -75,8 +75,6 @@ const { notifications, unreadCount, fetchNotifications, markAsRead, markAllRead 
 
 const loading = ref(false)
 const error   = ref(null)
-
-import { ref } from 'vue'
 
 async function loadNotifications() {
   loading.value = true

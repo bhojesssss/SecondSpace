@@ -75,8 +75,8 @@
       </div>
 
       <div v-else class="messages-area scrollbar-hide" ref="messagesArea">
-        <div v-for="msg in messages" :key="msg.id" class="msg-row" :class="msg.mine || msg.is_mine ? 'justify-end' : 'justify-start'">
-          <div class="msg-bubble" :class="(msg.mine || msg.is_mine) ? 'msg-mine' : 'msg-theirs glass-panel'">
+        <div v-for="msg in messages" :key="msg.id" class="msg-row" :class="isMyMessage(msg) ? 'justify-end' : 'justify-start'">
+          <div class="msg-bubble" :class="isMyMessage(msg) ? 'msg-mine' : 'msg-theirs glass-panel'">
             {{ msg.text || msg.message || msg.content }}
           </div>
         </div>
@@ -103,7 +103,7 @@ import AuthGate from '@/components/AuthGate.vue'
 import api from '@/services/api'
 
 useScrollReveal()
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, user } = useAuth()
 
 const activeChatId = ref(null)
 const activeChat   = ref(null)
@@ -167,7 +167,7 @@ async function sendMessage() {
   if (!text || !activeChatId.value || sending.value) return
 
   // Optimistic append
-  const optimistic = { id: `temp-${Date.now()}`, text, mine: true, is_mine: true }
+  const optimistic = { id: `temp-${Date.now()}`, text, mine: true, is_mine: true, sender_id: user.value?.id }
   messages.value.push(optimistic)
   newMessage.value = ''
   sending.value = true
@@ -186,6 +186,11 @@ async function sendMessage() {
   } finally {
     sending.value = false
   }
+}
+
+function isMyMessage(msg) {
+  if (msg.mine === true || msg.is_mine === true) return true
+  return msg.sender_id && user.value?.id && msg.sender_id === user.value.id
 }
 </script>
 

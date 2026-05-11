@@ -12,7 +12,13 @@ export function useNotifications() {
   /** Fetch all notifications from the backend. */
   async function fetchNotifications() {
     const data = await api.get('/notifications')
-    notifications.value = Array.isArray(data) ? data : []
+    if (data && Array.isArray(data.notifications)) {
+      notifications.value = data.notifications
+    } else if (Array.isArray(data)) {
+      notifications.value = data
+    } else {
+      notifications.value = []
+    }
     _loaded.value = true
   }
 

@@ -88,7 +88,7 @@
             <p class="seller-name">{{ product.seller_name || 'SecondSeller' }}</p>
             <p class="seller-meta">{{ product.seller_location || 'Indonesia' }} <span class="meta-dot">·</span> ⭐ {{ product.seller_rating || '4.9' }}</p>
           </div>
-          <button @click="$router.push('/chat')" class="seller-chat-btn">Chat</button>
+          <button @click="startChatWithSeller" class="seller-chat-btn">Chat</button>
         </div>
 
         <!-- CTA -->
@@ -128,7 +128,7 @@ const cartMsg = ref('')
 
 const product = ref({
   id: null, name: '', price: 0, category: '', img: '', sold: 0, size: 'M', description: '', images: [],
-  seller_name: '', seller_location: '', seller_rating: '', rating: '', review_count: 0,
+  seller_id: null, seller_name: '', seller_location: '', seller_rating: '', rating: '', review_count: 0,
 })
 
 const productImages = computed(() =>
@@ -158,6 +158,7 @@ async function fetchProduct() {
       sold:            data.sold || data.sold_count || 0,
       size:            data.size || 'M',
       description:     data.description || '',
+      seller_id:       data.seller_id || data.seller?.id || data.profiles?.id || null,
       seller_name:     data.seller?.name || data.seller_name || 'SecondSeller',
       seller_location: data.seller?.location || data.seller_location || 'Indonesia',
       seller_rating:   data.seller?.rating || data.seller_rating || '4.9',
@@ -191,6 +192,22 @@ async function addToCart() {
     cartMsg.value = e.message || 'Gagal menambahkan ke keranjang.'
   } finally {
     addingToCart.value = false
+  }
+}
+
+async function startChatWithSeller() {
+  if (!isLoggedIn.value) {
+    router.push('/login')
+    return
+  }
+  try {
+    const data = await api.post('/chats', {
+      seller_id: product.value.seller_id || product.value.profiles?.id || product.value.seller?.id,
+      product_id: product.value.id
+    })
+    router.push('/chat')
+  } catch (e) {
+    alert('Gagal memulai chat: ' + (e.message || ''))
   }
 }
 
