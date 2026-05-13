@@ -60,6 +60,11 @@ const router = createRouter({
       component: () => import('@/views/ReviewView.vue'),
     },
     {
+      path: '/profile/wishlist',
+      name: 'profile-wishlist',
+      component: () => import('@/views/WishlistView.vue'),
+    },
+    {
       path: '/profile/sell',
       name: 'profile-sell',
       component: () => import('@/views/SellItemView.vue'),

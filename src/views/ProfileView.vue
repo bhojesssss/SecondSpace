@@ -136,12 +136,14 @@ const icons = {
   bell:    wrap('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'),
   help:    wrap('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
   doc:     wrap('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'),
+  heart:   wrap('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
 }
 
 const menuGroups = [
   { title: 'Transaksi', items: [
     { icon: 'bag',     label: 'Pesanan Saya',      path: '/cart' },
     { icon: 'package', label: 'Riwayat Pembelian', path: '/profile/history' },
+    { icon: 'heart',   label: 'Wishlist Saya',     path: '/profile/wishlist' },
     { icon: 'tag',     label: 'Jual Barang',       path: '/profile/sell' },
     { icon: 'inbox',   label: 'Pesanan Masuk',     path: '/profile/sales' },
   ]},
