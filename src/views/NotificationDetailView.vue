@@ -45,11 +45,11 @@
           <div class="hero-deco"></div>
 
           <div class="hero-icon">
-            <span>{{ notif.icon }}</span>
+            <span>{{ typeIcon(notif.type) }}</span>
           </div>
           <span class="hero-tag">{{ typeLabel(notif.type) }}</span>
           <h2 class="hero-title">{{ notif.title }}</h2>
-          <p class="hero-time">{{ notif.fullDate }}</p>
+          <p class="hero-time">{{ formatDate(notif.created_at) }}</p>
         </div>
       </section>
 
@@ -78,7 +78,7 @@
           </div>
           <div class="meta-row">
             <span class="meta-key">Waktu</span>
-            <span class="meta-val">{{ notif.fullDate }}</span>
+            <span class="meta-val">{{ formatDate(notif.created_at) }}</span>
           </div>
           <div class="meta-row">
             <span class="meta-key">Status</span>
@@ -86,15 +86,15 @@
           </div>
           <div class="meta-row">
             <span class="meta-key">ID Notifikasi</span>
-            <span class="meta-val font-mono">#{{ notif.id.toString().padStart(6, '0') }}</span>
+            <span class="meta-val font-mono">#{{ shortId(notif.id) }}</span>
           </div>
         </div>
       </section>
 
       <!-- Action -->
       <section class="reveal reveal-delay-3">
-        <router-link :to="notif.link" class="action-btn">
-          <span>{{ notif.linkLabel }}</span>
+        <router-link v-if="notif.link" :to="notif.link" class="action-btn">
+          <span>{{ notif.link_label || 'Lihat Detail' }}</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"/>
             <polyline points="12 5 19 12 12 19"/>
@@ -109,24 +109,34 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
-import { useNotifications } from '@/composables/useNotifications'
 import AuthGate from '@/components/AuthGate.vue'
-useScrollReveal()
+import api from '@/services/api'
 
+useScrollReveal()
 const route = useRoute()
 const router = useRouter()
 const { isLoggedIn } = useAuth()
-const { getById, markAsRead } = useNotifications()
 
-const notif = computed(() => getById(route.params.id))
+const notif = ref(null)
+const loading = ref(false)
 
-onMounted(() => {
-  if (notif.value) markAsRead(notif.value.id)
-})
+async function fetchNotif() {
+  loading.value = true
+  try {
+    const data = await api.get(`/notifications/${route.params.id}`)
+    notif.value = data
+  } catch (e) {
+    notif.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchNotif)
 
 const goBack = () => {
   if (window.history.state?.back) router.back()
@@ -144,6 +154,25 @@ const heroBgClass = (type) => {
   if (type === 'promo') return 'hero-sports'
   if (type === 'chat') return 'hero-dark'
   return 'hero-fashion'
+}
+
+const typeIcon = (type) => {
+  if (type === 'order') return '📦'
+  if (type === 'chat') return '💬'
+  if (type === 'promo') return '🏷️'
+  return '🔔'
+}
+
+const formatDate = (iso) => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+const shortId = (id) => {
+  if (!id) return ''
+  return String(id).slice(0, 8).toUpperCase()
 }
 </script>
 

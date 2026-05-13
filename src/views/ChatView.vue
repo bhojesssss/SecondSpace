@@ -152,9 +152,17 @@ async function fetchMessages(chatId) {
   }
 }
 
-function openChat(chat) {
+async function openChat(chat) {
   activeChatId.value = chat.id
   activeChat.value = chat
+  // Reset unread badge locally
+  chat.unread = 0
+  // Sync with backend
+  try {
+    await api.patch(`/chats/${chat.id}/read`)
+  } catch (e) {
+    console.error('Gagal mark as read:', e.message)
+  }
 }
 
 watch(activeChatId, (id) => {
