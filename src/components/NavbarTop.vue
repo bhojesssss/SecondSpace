@@ -77,50 +77,40 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useNotifications } from '@/composables/useNotifications'
+import { useChats } from '@/composables/useChats'
 import api from '@/services/api'
 
 const router = useRouter()
 const { isLoggedIn } = useAuth()
 const { unreadCount, fetchNotifications } = useNotifications()
+const { totalUnread: chatUnread, fetchChats } = useChats()
 const searchQuery = ref('')
 const cartCount = ref(0)
-const chatCount = ref(0)
 
-// Fetch badge counts whenever auth state becomes true
 async function fetchCounts() {
   if (!isLoggedIn.value) {
     cartCount.value = 0
-    chatCount.value = 0
     return
   }
   try {
-    const [cartData, chatData] = await Promise.allSettled([
-      api.get('/cart'),
-      api.get('/chats'),
-    ])
-    if (cartData.status === 'fulfilled') {
-      const list = Array.isArray(cartData.value) ? cartData.value : []
-      cartCount.value = list.reduce((s, i) => s + (i.qty || 1), 0)
-    }
-    if (chatData.status === 'fulfilled') {
-      const list = Array.isArray(chatData.value) ? chatData.value : []
-      chatCount.value = list.reduce((s, c) => s + (c.unread || c.buyer_unread || c.seller_unread || 0), 0)
-    }
-    // Fetch notifications into the shared store so unreadCount is live
+    const cartData = await api.get('/cart')
+    const list = Array.isArray(cartData) ? cartData : []
+    cartCount.value = list.reduce((s, i) => s + (i.qty || 1), 0)
+    await fetchChats()
     await fetchNotifications()
   } catch {
-    // fail silently — badges are decorative
+    // silent
   }
 }
 
-// Run once on mount and whenever login state changes
 watch(isLoggedIn, fetchCounts, { immediate: true })
 
-const notifCount = unreadCount // reactive ref from singleton
+const chatCount = chatUnread
+const notifCount = unreadCount
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {

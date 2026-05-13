@@ -99,32 +99,28 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
+import { useChats } from '@/composables/useChats'
 import AuthGate from '@/components/AuthGate.vue'
 import api from '@/services/api'
 
 useScrollReveal()
 const { isLoggedIn, user } = useAuth()
+const { chats, totalUnread, fetchChats, markChatRead } = useChats()
 
 const activeChatId = ref(null)
 const activeChat   = ref(null)
 const newMessage   = ref('')
 const sending      = ref(false)
 const messagesArea = ref(null)
-
-// Chats list
-const chats        = ref([])
 const loadingChats = ref(false)
 const errorChats   = ref(null)
 
-const totalUnread = computed(() => chats.value.reduce((s, c) => s + (c.unread || 0), 0))
-
-async function fetchChats() {
+async function loadChats() {
   if (!isLoggedIn.value) return
   loadingChats.value = true
   errorChats.value = null
   try {
-    const data = await api.get('/chats')
-    chats.value = Array.isArray(data) ? data : []
+    await fetchChats()
   } catch (e) {
     errorChats.value = e.message || 'Gagal memuat daftar chat.'
   } finally {
@@ -132,9 +128,8 @@ async function fetchChats() {
   }
 }
 
-onMounted(fetchChats)
+onMounted(loadChats)
 
-// Messages
 const messages        = ref([])
 const loadingMessages = ref(false)
 
@@ -155,13 +150,9 @@ async function fetchMessages(chatId) {
 async function openChat(chat) {
   activeChatId.value = chat.id
   activeChat.value = chat
-  // Reset unread badge locally
-  chat.unread = 0
-  // Sync with backend
-  try {
-    await api.patch(`/chats/${chat.id}/read`)
-  } catch (e) {
-    console.error('Gagal mark as read:', e.message)
+  // Decrement unread count immediately + sync with backend
+  if (chat.unread > 0) {
+    await markChatRead(chat.id)
   }
 }
 
@@ -174,7 +165,6 @@ async function sendMessage() {
   const text = newMessage.value.trim()
   if (!text || !activeChatId.value || sending.value) return
 
-  // Optimistic append
   const optimistic = { id: `temp-${Date.now()}`, text, mine: true, is_mine: true, sender_id: user.value?.id }
   messages.value.push(optimistic)
   newMessage.value = ''
@@ -184,11 +174,9 @@ async function sendMessage() {
 
   try {
     const data = await api.post(`/chats/${activeChatId.value}/messages`, { text })
-    // Replace optimistic with real message
     const idx = messages.value.findIndex(m => m.id === optimistic.id)
     if (idx !== -1) messages.value[idx] = { ...data, mine: true, is_mine: true }
   } catch (e) {
-    // Rollback
     messages.value = messages.value.filter(m => m.id !== optimistic.id)
     alert('Gagal mengirim pesan: ' + (e.message || ''))
   } finally {
