@@ -149,7 +149,7 @@ const reviewOrder = (id) => router.push(`/profile/history/${id}/review`)
 const cancelOrder = async (id) => {
   if (!confirm('Batalkan pesanan ini?')) return
   try {
-    await api.patch(`/orders/${id}/status`, { status: 'Dibatalkan' })
+    await api.patch(`/orders/${id}/cancel`)
     await fetchOrders()
   } catch (e) {
     alert('Gagal membatalkan pesanan: ' + (e.message || ''))

@@ -55,6 +55,11 @@ const router = createRouter({
       component: () => import('@/views/PurchaseHistoryView.vue'),
     },
     {
+      path: '/profile/history/:id/review',
+      name: 'profile-review',
+      component: () => import('@/views/ReviewView.vue'),
+    },
+    {
       path: '/profile/sell',
       name: 'profile-sell',
       component: () => import('@/views/SellItemView.vue'),
