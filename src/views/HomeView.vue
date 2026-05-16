@@ -71,7 +71,7 @@
       </div>
 
       <!-- Loading skeleton -->
-      <div v-if="loadingRecommended" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div v-if="loadingRecommended" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
         <div v-for="i in 8" :key="i" class="skeleton-card">
           <div class="skeleton skeleton-img"></div>
           <div class="skeleton skeleton-line mt-3"></div>
@@ -86,7 +86,7 @@
       </div>
 
       <!-- Data -->
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
         <ProductCard
           v-for="(product, i) in recommendedProducts"
           :key="product.id"
@@ -162,7 +162,7 @@
       </div>
 
       <!-- Loading skeleton -->
-      <div v-if="loadingSports" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div v-if="loadingSports" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
         <div v-for="i in 4" :key="i" class="skeleton-card">
           <div class="skeleton skeleton-img"></div>
           <div class="skeleton skeleton-line mt-3"></div>
@@ -177,7 +177,7 @@
       </div>
 
       <!-- Data -->
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
         <ProductCard
           v-for="(product, i) in sportsProducts"
           :key="product.id"
@@ -313,16 +313,18 @@ async function fetchSports() {
 <style scoped>
 @reference "../assets/main.css";
 
-.home-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-10; }
-.section-title-wrap { @apply flex items-center gap-3 mb-5; }
-.section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
+.home-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .home-root { padding: 1rem; } }
+.section-gap { @apply mb-7 sm:mb-10; }
+.section-title-wrap { @apply flex items-center gap-3 mb-4 sm:mb-5; }
+.section-accent { @apply w-1 h-6 sm:h-7 rounded-full flex-shrink-0; }
 .fashion-accent { background: #C1121F; }
 .sports-accent { background: #669BBC; }
 .section-title { @apply text-base font-extrabold tracking-tight text-gray-900; letter-spacing: -0.01em; }
 
-.carousel-wrapper { border: 2px solid #111; box-shadow: 6px 6px 0 0 #111; }
-.carousel-h { height: 240px; }
+.carousel-wrapper { border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+@media (min-width: 640px) { .carousel-wrapper { box-shadow: 6px 6px 0 0 #111; } }
+.carousel-h { height: 220px; }
 @media (min-width: 640px) { .carousel-h { height: 280px; } }
 @media (min-width: 768px) { .carousel-h { height: 300px; } }
 .carousel-track { will-change: transform; }
@@ -338,7 +340,8 @@ async function fetchSports() {
 .dot-active { @apply bg-white w-6; box-shadow: 0 0 6px rgba(255,255,255,0.6); }
 .dot-inactive { @apply bg-white/40 w-2 hover:bg-white/70; }
 
-.cta-btn { @apply w-fit px-5 py-2.5 text-sm font-bold rounded-xl; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.cta-btn { @apply w-fit px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold rounded-xl; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+@media (min-width: 640px) { .cta-btn { box-shadow: 4px 4px 0 0 #111; } }
 .cta-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 0 #111; }
 .cta-btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 0 #111; }
 .fashion-cta { @apply bg-white text-[#C1121F]; }
@@ -348,7 +351,7 @@ async function fetchSports() {
 
 .chip-icon { border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .chip-link:hover .chip-icon { transform: translate(1.5px, 1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
-.chips-track { @apply flex gap-4 overflow-x-auto pb-2; -ms-overflow-style: none; scrollbar-width: none; }
+.chips-track { @apply flex gap-3 sm:gap-4 overflow-x-auto pb-2; -ms-overflow-style: none; scrollbar-width: none; }
 .chips-track::-webkit-scrollbar { display: none; }
 .chip-link { @apply flex-shrink-0 flex flex-col items-center gap-2 no-underline; }
 .chip-icon { @apply w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center overflow-hidden; }

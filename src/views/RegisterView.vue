@@ -111,20 +111,20 @@ async function handleRegister() {
 <style scoped>
 @reference "../assets/main.css";
 
-.auth-root { @apply flex flex-col items-center justify-center w-full py-8; min-height: calc(100vh - 5rem); }
-.auth-frame { @apply w-full max-w-md flex flex-col items-center; }
-.brand-link { @apply mb-6 transition-transform duration-200 hover:scale-105; }
-.brand-logo { @apply h-10; }
-.auth-card { @apply relative w-full p-5 sm:p-7 rounded-2xl bg-white; border: 2px solid #111; box-shadow: 6px 6px 0 0 #C1121F; }
+.auth-root { @apply flex flex-col items-center justify-center w-full py-6 sm:py-8; min-height: calc(100dvh - 4rem); }
+.auth-frame { @apply w-full max-w-md flex flex-col items-center px-1; }
+.brand-link { @apply mb-5 sm:mb-6 transition-transform duration-200 hover:scale-105; }
+.brand-logo { @apply h-9 sm:h-10; }
+.auth-card { @apply relative w-full p-4 sm:p-7 rounded-2xl bg-white; border: 2px solid #111; box-shadow: 5px 5px 0 0 #C1121F; }
 @media (min-width: 640px) { .auth-card { box-shadow: 8px 8px 0 0 #C1121F; } }
-.corner-block { @apply absolute -top-3 -right-3 w-10 h-10 rounded-md; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; }
-.auth-title { @apply text-2xl sm:text-3xl font-bold mb-1 text-gray-900; font-family: 'CalSans', serif; letter-spacing: -0.02em; }
-.auth-subtitle { @apply text-sm text-black/60 mb-4; }
+.corner-block { @apply absolute -top-2 -right-2 sm:-top-3 sm:-right-3 w-8 h-8 sm:w-10 sm:h-10 rounded-md; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; }
+.auth-title { @apply text-xl sm:text-3xl font-bold mb-1 text-gray-900; font-family: 'CalSans', serif; letter-spacing: -0.02em; }
+.auth-subtitle { @apply text-xs sm:text-sm text-black/60 mb-4; }
 .auth-error { @apply mb-4 px-4 py-3 rounded-xl text-sm font-semibold text-[#C1121F]; background: rgba(193,18,31,0.08); border: 1.5px solid rgba(193,18,31,0.3); }
-.auth-form { @apply flex flex-col gap-4; }
+.auth-form { @apply flex flex-col gap-3 sm:gap-4; }
 .field { @apply flex flex-col; }
-.field-label { @apply text-[11px] font-bold uppercase tracking-widest text-black/70 mb-2; }
-.field-input { @apply w-full h-12 px-4 rounded-xl text-sm border-2 border-black/15 outline-none transition-all duration-200; background-color: rgba(255,255,255,0.65); backdrop-filter: blur(12px); }
+.field-label { @apply text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-black/70 mb-1.5 sm:mb-2; }
+.field-input { @apply w-full h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl text-sm border-2 border-black/15 outline-none transition-all duration-200; background-color: rgba(255,255,255,0.65); backdrop-filter: blur(12px); }
 .field-input:focus { border-color: #C1121F; box-shadow: 0 0 0 3px rgba(193,18,31,0.18); }
 .field-input::placeholder { @apply text-black/30; }
 .field-input:disabled { @apply opacity-60 cursor-not-allowed; }
@@ -134,7 +134,8 @@ async function handleRegister() {
 .terms { @apply flex items-start gap-2 text-xs text-black/70 font-semibold cursor-pointer select-none mt-1 leading-snug; }
 .remember-cb { @apply w-4 h-4 rounded border-2 border-black/30 cursor-pointer flex-shrink-0 mt-0.5; accent-color: #C1121F; }
 .inline-link { @apply text-[#C1121F] font-bold no-underline hover:underline; }
-.auth-submit { @apply w-full flex items-center justify-center gap-2 py-3.5 mt-2 text-white text-sm font-bold rounded-xl transition-all duration-150; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.auth-submit { @apply w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 mt-2 text-white text-sm font-bold rounded-xl transition-all duration-150; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+@media (min-width: 640px) { .auth-submit { box-shadow: 4px 4px 0 0 #111; } }
 .auth-submit:hover:not(:disabled) { transform: translate(2px,2px); box-shadow: 2px 2px 0 0 #111; }
 .auth-submit:active:not(:disabled) { transform: translate(4px,4px); box-shadow: 0 0 0 0 #111; }
 .auth-submit:disabled { @apply opacity-60 cursor-not-allowed; }

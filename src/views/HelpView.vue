@@ -180,10 +180,11 @@ const filteredFaqs = computed(() => {
 /* ── Root ───────────────────────────────────────────────────────────────────── */
 .help-root {
   @apply pb-8;
-  padding: 1rem;
+  padding: 0.75rem;
 }
+@media (min-width: 640px) { .help-root { padding: 1rem; } }
 .section-gap {
-  @apply mb-6;
+  @apply mb-5 sm:mb-6;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────────── */

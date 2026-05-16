@@ -10,15 +10,21 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div class="section-accent fashion-accent"></div>
-          <h1 class="page-title">Jual Barang</h1>
+          <h1 class="page-title">{{ isEdit ? 'Edit Barang' : 'Jual Barang' }}</h1>
         </div>
-        <p class="page-sub">Lengkapi detail barang preloved kamu di bawah.</p>
+        <p class="page-sub">{{ isEdit ? 'Perbarui detail barang kamu di bawah.' : 'Lengkapi detail barang preloved kamu di bawah.' }}</p>
       </section>
 
       <!-- Error banner -->
       <div v-if="submitError" class="submit-error-banner">{{ submitError }}</div>
 
-      <form @submit.prevent="handleSubmit" class="form-stack">
+      <!-- Loading state for edit mode -->
+      <div v-if="loadingProduct" class="loading-state">
+        <svg class="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
+        <p>Memuat data barang...</p>
+      </div>
+
+      <form v-else @submit.prevent="handleSubmit" class="form-stack">
         <!-- Images -->
         <section class="reveal">
           <p class="field-label">Foto Barang</p>
@@ -95,7 +101,7 @@
             <svg class="animate-spin inline-block mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
             Memproses...
           </span>
-          <span v-else>Pasang Barang</span>
+          <span v-else>{{ isEdit ? 'Simpan Perubahan' : 'Pasang Barang' }}</span>
           <svg v-if="!submitting" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </form>
@@ -105,8 +111,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
 import AuthGate from '@/components/AuthGate.vue'
@@ -115,8 +121,13 @@ import { uploadProductImage } from '@/services/supabase'
 
 useScrollReveal()
 const router = useRouter()
+const route  = useRoute()
 const { isLoggedIn } = useAuth()
 const goBack = () => { if (window.history.state?.back) router.back(); else router.push('/profile') }
+
+const editId = computed(() => route.query.edit || null)
+const isEdit = computed(() => !!editId.value)
+const loadingProduct = ref(false)
 
 const categories = ['Fashion', 'Sports']
 const fashionSubcats = ['T-Shirts', 'Hoodies', 'Jackets', 'Pants', 'Shorts', 'Shoes', 'Bags', 'Accessories']
@@ -159,19 +170,66 @@ const formatPrice = (p) => 'Rp ' + (p || 0).toLocaleString('id-ID')
 const submitting  = ref(false)
 const submitError = ref('')
 
+// Reverse: category_id (1-16) → { category, subcategory }
+const categoryFromId = (id) => {
+  const entry = Object.entries(categoryIdMap).find(([, v]) => v === id)
+  if (!entry) return null
+  const [subcategory, cid] = entry
+  return { subcategory, category: cid <= 8 ? 'Fashion' : 'Sports' }
+}
+
+// Load product in edit mode
+async function loadProduct() {
+  if (!isEdit.value || !isLoggedIn.value) return
+  loadingProduct.value = true
+  submitError.value = ''
+  try {
+    const data = await api.get(`/products/${editId.value}`)
+    form.name        = data.name || ''
+    form.description = data.description || ''
+    form.price       = data.price ?? null
+    form.condition   = data.condition || 'Like New'
+    form.size        = data.size || 'M'
+    const cat = categoryFromId(data.category_id)
+    if (cat) {
+      form.category    = cat.category
+      form.subcategory = cat.subcategory
+    }
+    const imgs = Array.isArray(data.images) ? data.images : []
+    for (let i = 0; i < 4; i++) {
+      imageFiles.value[i] = null
+      imagePreviews.value[i] = imgs[i] || null
+    }
+  } catch (e) {
+    submitError.value = e.message || 'Gagal memuat data barang.'
+  } finally {
+    loadingProduct.value = false
+  }
+}
+
+onMounted(loadProduct)
+
 async function handleSubmit() {
   if (!form.subcategory) { submitError.value = 'Pilih subkategori terlebih dahulu.'; return }
-  const files = imageFiles.value.filter(Boolean)
-  if (files.length === 0) { submitError.value = 'Tambahkan minimal satu foto.'; return }
+  const hasAnyImage = imageFiles.value.some(Boolean) || imagePreviews.value.some(Boolean)
+  if (!hasAnyImage) { submitError.value = 'Tambahkan minimal satu foto.'; return }
 
   submitting.value = true
   submitError.value = ''
   try {
-    // 1. Upload images to Supabase Storage
-    const imageUrls = await Promise.all(files.map(f => uploadProductImage(f)))
+    // Build final image URL list: upload new files, keep existing URLs as-is
+    const imageUrls = []
+    for (let i = 0; i < 4; i++) {
+      const file = imageFiles.value[i]
+      const existing = imagePreviews.value[i]
+      if (file) {
+        imageUrls.push(await uploadProductImage(file))
+      } else if (existing && /^https?:\/\//.test(existing)) {
+        imageUrls.push(existing)
+      }
+    }
 
-    // 2. POST product with snake_case fields
-    await api.post('/products', {
+    const payload = {
       name:        form.name,
       description: form.description,
       price:       form.price,
@@ -179,12 +237,19 @@ async function handleSubmit() {
       condition:   form.condition,
       size:        form.size,
       images:      imageUrls,
-    })
+    }
 
-    alert('Barang berhasil dipasang!')
-    router.push('/profile')
+    if (isEdit.value) {
+      await api.patch(`/products/${editId.value}`, payload)
+      alert('Perubahan berhasil disimpan!')
+      router.push('/profile/listings')
+    } else {
+      await api.post('/products', payload)
+      alert('Barang berhasil dipasang!')
+      router.push('/profile')
+    }
   } catch (e) {
-    submitError.value = e.message || 'Gagal memasang barang. Silakan coba lagi.'
+    submitError.value = e.message || (isEdit.value ? 'Gagal menyimpan perubahan.' : 'Gagal memasang barang. Silakan coba lagi.')
   } finally {
     submitting.value = false
   }
@@ -194,22 +259,23 @@ async function handleSubmit() {
 <style scoped>
 @reference "../assets/main.css";
 
-.sell-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-5; }
+.sell-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .sell-root { padding: 1rem; } }
+.section-gap { @apply mb-4 sm:mb-5; }
 .header-wrap { @apply flex items-center gap-3; }
 .back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 bg-white transition-all duration-200 active:scale-90; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; }
 .back-btn:hover { color: #C1121F; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
 .section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
 .fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
-.page-title { @apply text-2xl font-bold tracking-tight text-gray-900; font-family: 'CalSans', serif; }
-.page-sub { @apply text-sm text-black/55 mt-2 ml-12; }
+.page-title { @apply text-xl sm:text-2xl font-bold tracking-tight text-gray-900; font-family: 'CalSans', serif; }
+.page-sub { @apply text-xs sm:text-sm text-black/55 mt-2 ml-12; }
 
 .submit-error-banner { @apply mb-4 px-4 py-3 rounded-xl text-sm font-semibold text-[#C1121F]; background: rgba(193,18,31,0.08); border: 1.5px solid rgba(193,18,31,0.3); }
 
-.form-stack { @apply flex flex-col gap-6; }
-.field { @apply flex flex-col mb-4; }
-.field-label { @apply text-[11px] font-bold uppercase tracking-widest text-black/70 mb-2; }
-.field-input { @apply w-full h-12 px-4 rounded-xl text-sm border-2 border-black/15 outline-none transition-all duration-200; background-color: rgba(255,255,255,0.65); backdrop-filter: blur(12px); }
+.form-stack { @apply flex flex-col gap-5 sm:gap-6; }
+.field { @apply flex flex-col mb-3 sm:mb-4; }
+.field-label { @apply text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-black/70 mb-2; }
+.field-input { @apply w-full h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl text-sm border-2 border-black/15 outline-none transition-all duration-200; background-color: rgba(255,255,255,0.65); backdrop-filter: blur(12px); }
 .field-input:focus { border-color: #C1121F; box-shadow: 0 0 0 3px rgba(193,18,31,0.18); }
 .field-input::placeholder { @apply text-black/30; }
 .field-textarea { @apply h-auto py-3 leading-snug; resize: vertical; min-height: 110px; }
@@ -247,10 +313,12 @@ async function handleSubmit() {
 .price-input::-webkit-outer-spin-button,.price-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .price-input { -moz-appearance: textfield; }
 
-.submit-btn { @apply w-full flex items-center justify-center gap-2 py-3.5 text-white text-sm font-bold rounded-xl transition-all duration-150; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.submit-btn { @apply w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 text-white text-sm font-bold rounded-xl transition-all duration-150; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+@media (min-width: 640px) { .submit-btn { box-shadow: 4px 4px 0 0 #111; } }
 .submit-btn:hover:not(:disabled) { transform: translate(2px,2px); box-shadow: 2px 2px 0 0 #111; }
 .submit-btn:active:not(:disabled) { transform: translate(4px,4px); box-shadow: 0 0 0 0 #111; }
 .submit-btn:disabled { @apply opacity-70 cursor-not-allowed; }
+.loading-state { @apply flex flex-col items-center justify-center gap-2 py-16 text-black/60 text-sm font-semibold; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

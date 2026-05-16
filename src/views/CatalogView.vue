@@ -217,10 +217,11 @@ async function fetchProducts() {
 <style scoped>
 @reference "../assets/main.css";
 
-.catalog-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-8; }
-.section-title-wrap { @apply flex items-center gap-3 mb-5; }
-.section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
+.catalog-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .catalog-root { padding: 1rem; } }
+.section-gap { @apply mb-6 sm:mb-8; }
+.section-title-wrap { @apply flex items-center gap-3 mb-4 sm:mb-5; }
+.section-accent { @apply w-1 h-6 sm:h-7 rounded-full flex-shrink-0; }
 .fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
 .sports-accent  { background: linear-gradient(135deg, #669BBC, #003049); }
 .page-title { @apply text-2xl font-bold tracking-tight text-gray-900; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
@@ -230,8 +231,8 @@ async function fetchProducts() {
 .search-input:focus { border-color: #C1121F; }
 .search-icon { @apply absolute right-4 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none; }
 
-.tabs-track { @apply flex gap-3 overflow-x-auto pb-2; }
-.tab-btn { @apply flex-shrink-0 px-5 sm:px-6 py-2.5 text-sm font-bold rounded-xl; border: 2px solid #111; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease; }
+.tabs-track { @apply flex gap-2 sm:gap-3 overflow-x-auto pb-2; }
+.tab-btn { @apply flex-shrink-0 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-bold rounded-xl; border: 2px solid #111; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease; }
 .tab-active-all,.tab-active-fashion,.tab-active-sports { @apply text-white; box-shadow: 4px 4px 0 0 #111; }
 .tab-active-all:hover,.tab-active-fashion:hover,.tab-active-sports:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 0 #111; }
 .tab-active-all    { background: linear-gradient(135deg, #111111, #333333); }
@@ -249,23 +250,24 @@ async function fetchProducts() {
 .cat-chip-inactive { @apply text-black/70; }
 .cat-chip-inactive:hover { @apply text-black; box-shadow: 2px 2px 0 0 #111; transform: translate(-1px,-1px); }
 
-.sort-bar { @apply flex items-center justify-between mb-5 gap-3 relative; z-index: 30; }
+.sort-bar { @apply flex items-center justify-between mb-5 gap-2 sm:gap-3 relative flex-wrap; z-index: 30; }
 .items-count { @apply text-xs font-bold text-black/60 uppercase tracking-wider; }
 .sort-dd { @apply relative; }
-.sort-trigger { @apply flex items-center justify-between gap-2 text-sm font-bold rounded-xl px-4 py-2 bg-white text-black cursor-pointer outline-none; min-width: 168px; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+.sort-trigger { @apply flex items-center justify-between gap-2 text-xs sm:text-sm font-bold rounded-xl px-3 sm:px-4 py-2 bg-white text-black cursor-pointer outline-none; min-width: 132px; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+@media (min-width: 640px) { .sort-trigger { min-width: 168px; } }
 .sort-trigger:hover { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
 .sort-trigger.is-open { border-color: #C1121F; transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
 .sort-trigger-label { @apply truncate; }
 .sort-chevron { @apply flex-shrink-0 text-black/70; transition: transform 0.2s ease; }
 .sort-chevron.is-open { transform: rotate(180deg); color: #C1121F; }
-.sort-menu { @apply absolute right-0 top-full mt-2 w-56 rounded-xl bg-white overflow-hidden; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; z-index: 40; list-style: none; padding: 0.25rem; margin-left: 0; }
+.sort-menu { @apply absolute right-0 top-full mt-2 w-48 sm:w-56 rounded-xl bg-white overflow-hidden; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; z-index: 40; list-style: none; padding: 0.25rem; margin-left: 0; }
 .sort-option { @apply flex items-center justify-between text-sm font-semibold text-black/80 px-3 py-2.5 rounded-lg cursor-pointer; transition: background-color 0.12s ease, color 0.12s ease; }
 .sort-option:hover { @apply bg-[#FDF0D5] text-black; }
 .sort-option.is-active { background: linear-gradient(135deg, #C1121F, #780000); @apply text-white; }
 .sort-option.is-active:hover { @apply text-white; }
 .sort-pop-enter-active,.sort-pop-leave-active { transition: transform 0.15s ease, opacity 0.15s ease; transform-origin: top right; }
 .sort-pop-enter-from,.sort-pop-leave-to { opacity: 0; transform: scale(0.96) translateY(-4px); }
-.view-btn { @apply w-10 h-10 rounded-xl flex items-center justify-center bg-white text-black/70 hover:text-[#C1121F] cursor-pointer; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.view-btn { @apply w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white text-black/70 hover:text-[#C1121F] cursor-pointer flex-shrink-0; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .view-btn:hover { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
 
 .empty-state { @apply text-center py-20; }

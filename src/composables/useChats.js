@@ -5,7 +5,7 @@ const chats = ref([])
 const _loaded = ref(false)
 
 const totalUnread = computed(() =>
-  chats.value.reduce((s, c) => s + (c.unread || c.buyer_unread || c.seller_unread || 0), 0)
+  chats.value.reduce((s, c) => s + (c.unread || 0), 0)
 )
 
 export function useChats() {
@@ -20,18 +20,26 @@ export function useChats() {
   }
 
   async function markChatRead(chatId) {
-    // Optimistic: zero out unread for this chat locally
     const idx = chats.value.findIndex(c => c.id === chatId)
-    let prev = 0
+    let prev = null
     if (idx !== -1) {
-      prev = chats.value[idx].unread || 0
+      prev = {
+        unread: chats.value[idx].unread || 0,
+        buyer_unread: chats.value[idx].buyer_unread || 0,
+        seller_unread: chats.value[idx].seller_unread || 0,
+      }
       chats.value[idx].unread = 0
+      chats.value[idx].buyer_unread = 0
+      chats.value[idx].seller_unread = 0
     }
     try {
       await api.patch(`/chats/${chatId}/read`)
     } catch {
-      // Rollback
-      if (idx !== -1) chats.value[idx].unread = prev
+      if (idx !== -1 && prev) {
+        chats.value[idx].unread = prev.unread
+        chats.value[idx].buyer_unread = prev.buyer_unread
+        chats.value[idx].seller_unread = prev.seller_unread
+      }
     }
   }
 
