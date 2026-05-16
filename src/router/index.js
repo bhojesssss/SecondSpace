@@ -70,6 +70,11 @@ const router = createRouter({
       component: () => import('@/views/SellItemView.vue'),
     },
     {
+      path: '/profile/listings',
+      name: 'profile-listings',
+      component: () => import('@/views/MyListingsView.vue'),
+    },
+    {
       path: '/profile/sales',
       name: 'profile-sales',
       component: () => import('@/views/SalesView.vue'),

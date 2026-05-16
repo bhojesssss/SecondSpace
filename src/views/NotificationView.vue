@@ -8,7 +8,10 @@
           Notifikasi
           <span v-if="unreadCount > 0" class="unread-badge">{{ unreadCount }}</span>
         </h1>
-        <button v-if="unreadCount > 0" @click="markAllRead" class="mark-all-btn">Tandai Semua Dibaca</button>
+        <button v-if="unreadCount > 0" @click="markAllRead" class="mark-all-btn">
+        <span class="mark-all-long">Tandai Semua Dibaca</span>
+        <span class="mark-all-short">Tandai Semua</span>
+      </button>
       </div>
     </section>
 
@@ -104,21 +107,25 @@ const getDefaultIcon = (type) => ({
 <style scoped>
 @reference "../assets/main.css";
 
-.notif-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-6; }
-.section-title-wrap { @apply flex items-center gap-3 flex-wrap; }
-.section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
+.notif-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .notif-root { padding: 1rem; } }
+.section-gap { @apply mb-5 sm:mb-6; }
+.section-title-wrap { @apply flex items-center gap-2 sm:gap-3 flex-wrap; }
+.section-accent { @apply w-1 h-6 sm:h-7 rounded-full flex-shrink-0; }
 .fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
 .page-title { @apply text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2 flex-1; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
 .unread-badge { @apply text-xs font-bold text-white rounded-md px-2 py-0.5; background: linear-gradient(135deg, #C1121F, #780000); }
-.mark-all-btn { @apply text-xs font-bold text-[#C1121F] px-3 py-1.5 rounded-lg bg-white; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.mark-all-btn { @apply text-[11px] sm:text-xs font-bold text-[#C1121F] px-2.5 sm:px-3 py-1.5 rounded-lg bg-white whitespace-nowrap; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .mark-all-btn:hover { transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+.mark-all-long { @apply hidden sm:inline; }
+.mark-all-short { @apply inline sm:hidden; }
 
 .notif-list { @apply flex flex-col gap-3; }
-.notif-card { @apply relative flex items-start gap-3 sm:gap-4 rounded-2xl p-4 no-underline; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease; color: inherit; }
-.notif-card:hover { transform: translate(1.5px,1.5px); box-shadow: 2.5px 2.5px 0 0 #111; }
+.notif-card { @apply relative flex items-start gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 no-underline; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease; color: inherit; }
+@media (min-width: 640px) { .notif-card { box-shadow: 4px 4px 0 0 #111; } }
+.notif-card:hover { transform: translate(1.5px,1.5px); box-shadow: 2px 2px 0 0 #111; }
 .notif-unread { background: rgba(193,18,31,0.04); }
-.notif-icon-wrap { @apply w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0; border: 2px solid #111; }
+.notif-icon-wrap { @apply w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0; border: 2px solid #111; }
 .icon-order { background: rgba(193,18,31,0.1); }
 .icon-promo { background: rgba(102,155,188,0.12); }
 .icon-chat  { background: rgba(0,48,73,0.08); }

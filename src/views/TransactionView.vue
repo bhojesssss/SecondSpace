@@ -205,8 +205,9 @@ async function payNow() {
 <style scoped>
 @reference "../assets/main.css";
 
-.tx-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-6; }
+.tx-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .tx-root { padding: 1rem; } }
+.section-gap { @apply mb-5 sm:mb-6; }
 .header-wrap { @apply flex items-center gap-3; }
 .back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 bg-white transition-all duration-200 active:scale-90; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; }
 .back-btn:hover { color: #C1121F; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
@@ -218,15 +219,16 @@ async function payNow() {
 .empty-title { @apply text-xl font-bold text-gray-900 mb-1; font-family: 'CalSans', serif; }
 .empty-sub { @apply text-sm text-black/50 mb-6; }
 .empty-cta { @apply inline-block px-6 py-3 text-sm font-bold rounded-xl text-white no-underline; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.tx-layout { @apply flex flex-col lg:flex-row gap-6 items-start; }
+.tx-layout { @apply flex flex-col lg:flex-row gap-5 sm:gap-6 items-start; }
 .tx-main { @apply flex-1 w-full min-w-0; }
-.block-title-wrap { @apply flex items-center justify-between gap-3 mb-3; }
-.block-title { @apply text-base font-bold text-gray-900; font-family: 'CalSans', serif; }
+.block-title-wrap { @apply flex items-center justify-between gap-3 mb-2 sm:mb-3 flex-wrap; }
+.block-title { @apply text-sm sm:text-base font-bold text-gray-900; font-family: 'CalSans', serif; }
 .block-title-count { @apply text-xs font-medium text-black/40 ml-1; font-family: 'Helvetica', sans-serif; }
-.block-link { @apply text-xs font-bold text-[#C1121F] no-underline px-2 py-1 rounded-md; border: 1.5px solid #111; background: white; transition: all 0.15s ease; }
+.block-link { @apply text-[11px] sm:text-xs font-bold text-[#C1121F] no-underline px-2 py-1 rounded-md; border: 1.5px solid #111; background: white; transition: all 0.15s ease; }
 .block-link:hover { background: #C1121F; color: white; }
 .block-optional { @apply text-[10px] font-bold uppercase tracking-wider text-black/40 px-2 py-0.5 rounded-md; background: rgba(0,0,0,0.05); }
-.addr-card { @apply rounded-2xl p-4 sm:p-5; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.addr-card { @apply rounded-2xl p-3.5 sm:p-5; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+@media (min-width: 640px) { .addr-card { box-shadow: 4px 4px 0 0 #111; } }
 .addr-head { @apply flex items-start justify-between gap-3 mb-2; }
 .addr-label-wrap { @apply flex items-center gap-2; }
 .addr-label { @apply text-sm font-bold text-gray-900; font-family: 'CalSans', serif; }
@@ -235,8 +237,9 @@ async function payNow() {
 .addr-name { @apply text-[13px] font-semibold text-black/80 mb-1; }
 .addr-text { @apply text-xs text-black/55 leading-relaxed; }
 .items-list { @apply flex flex-col gap-3; }
-.tx-item { @apply rounded-2xl p-3 sm:p-4 flex flex-row gap-3 sm:gap-4; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
-.item-thumb { @apply w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden; background: #FDF0D5; border: 2px solid #111; }
+.tx-item { @apply rounded-2xl p-3 sm:p-4 flex flex-row gap-3 sm:gap-4; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+@media (min-width: 640px) { .tx-item { box-shadow: 4px 4px 0 0 #111; } }
+.item-thumb { @apply w-16 h-16 sm:w-24 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden; background: #FDF0D5; border: 2px solid #111; }
 .item-details { @apply flex-1 flex flex-col justify-between min-w-0; }
 .item-name { @apply text-sm sm:text-base font-bold text-gray-900 leading-snug truncate; }
 .item-meta { @apply flex flex-wrap items-center gap-2 mt-1; }
@@ -245,11 +248,11 @@ async function payNow() {
 .meta-dot { @apply w-1 h-1 rounded-full bg-black/20; }
 .item-price { @apply text-sm sm:text-base font-bold text-[#C1121F] mt-2; }
 .pay-list { @apply flex flex-col gap-3; }
-.pay-option { @apply flex items-center gap-3 p-3 sm:p-4 rounded-xl text-left w-full; border: 2px solid #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.pay-option { @apply flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-4 rounded-xl text-left w-full; border: 2px solid #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .pay-active { @apply text-white; background: linear-gradient(135deg, #C1121F, #780000); box-shadow: 3px 3px 0 0 #111; }
 .pay-inactive { @apply text-black/80; box-shadow: 2px 2px 0 0 #111; }
 .pay-inactive:hover { transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
-.pay-icon { @apply w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0; background: rgba(255,255,255,0.15); border: 2px solid #111; }
+.pay-icon { @apply w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0; background: rgba(255,255,255,0.15); border: 2px solid #111; }
 .pay-inactive .pay-icon { background: white; color: #C1121F; }
 .pay-info { @apply flex-1 min-w-0; }
 .pay-name { @apply text-sm font-bold; font-family: 'CalSans', serif; }
@@ -262,7 +265,8 @@ async function payNow() {
 .notes-input:focus { border-color: #C1121F; box-shadow: 0 0 0 3px rgba(193,18,31,0.18); }
 .notes-input::placeholder { @apply text-black/30; }
 .tx-summary-wrap { @apply w-full lg:w-[360px] lg:sticky lg:top-4 flex-shrink-0; }
-.tx-summary { @apply rounded-2xl p-5 sm:p-6; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.tx-summary { @apply rounded-2xl p-4 sm:p-6; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+@media (min-width: 640px) { .tx-summary { box-shadow: 4px 4px 0 0 #111; } }
 .summary-title-wrap { @apply flex items-center gap-3 mb-5; }
 .summary-title { @apply text-lg font-bold tracking-tight text-gray-900; font-family: 'CalSans', serif; }
 .summary-rows { @apply flex flex-col gap-3 mb-5; }
@@ -275,7 +279,8 @@ async function payNow() {
 .total-label { @apply text-sm font-semibold text-black/70; }
 .total-value { @apply text-xl font-bold text-gray-900; font-family: 'CalSans', serif; }
 .pay-error { @apply mb-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#C1121F]; background: rgba(193,18,31,0.08); border: 1.5px solid rgba(193,18,31,0.3); }
-.pay-btn { @apply w-full flex items-center justify-center gap-2 py-3.5 mt-1 text-white text-sm font-bold rounded-xl; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.pay-btn { @apply w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 mt-1 text-white text-sm font-bold rounded-xl; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+@media (min-width: 640px) { .pay-btn { box-shadow: 4px 4px 0 0 #111; } }
 .pay-btn:hover:not(:disabled) { transform: translate(2px,2px); box-shadow: 2px 2px 0 0 #111; }
 .pay-btn:disabled { @apply opacity-60 cursor-not-allowed; }
 .secure-note { @apply flex items-center justify-center gap-1.5 text-black/40 text-[11px] mt-3; }

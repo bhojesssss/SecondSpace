@@ -15,7 +15,7 @@
       </section>
 
       <!-- Loading -->
-      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
         <div v-for="i in 8" :key="i" class="skeleton aspect-square rounded-2xl"></div>
       </div>
 
@@ -36,7 +36,7 @@
       </div>
 
       <!-- Grid -->
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
         <ProductCard
           v-for="(item, idx) in items"
           :key="item.id"
@@ -106,8 +106,9 @@ onMounted(fetchWishlist)
 <style scoped>
 @reference "../assets/main.css";
 
-.wl-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-6; }
+.wl-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .wl-root { padding: 1rem; } }
+.section-gap { @apply mb-5 sm:mb-6; }
 .header-wrap { @apply flex items-center gap-3; }
 .back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 bg-white transition-all duration-200 active:scale-90; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; }
 .back-btn:hover { color: #C1121F; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }

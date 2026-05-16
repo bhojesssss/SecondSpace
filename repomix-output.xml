@@ -83,6 +83,7 @@ src/components/NavbarBottom.vue
 src/components/NavbarTop.vue
 src/components/ProductCard.vue
 src/composables/useAuth.js
+src/composables/useChats.js
 src/composables/useNotifications.js
 src/composables/useScrollReveal.js
 src/composables/useTransaction.js
@@ -99,6 +100,7 @@ src/views/EditProfileView.vue
 src/views/HelpView.vue
 src/views/HomeView.vue
 src/views/LoginView.vue
+src/views/MyListingsView.vue
 src/views/NotificationDetailView.vue
 src/views/NotificationView.vue
 src/views/ProductDetailView.vue
@@ -110,11 +112,413 @@ src/views/SalesView.vue
 src/views/SellItemView.vue
 src/views/TermsView.vue
 src/views/TransactionView.vue
+src/views/WishlistView.vue
 vite.config.js
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/views/MyListingsView.vue">
+<template>
+  <div class="listings-root">
+
+    <AuthGate
+      v-if="!isLoggedIn"
+      title="Login untuk Barang Saya"
+      message="Masuk dulu untuk kelola barang yang kamu jual."
+    />
+
+    <template v-else>
+      <!-- Header -->
+      <section class="section-gap">
+        <div class="header-wrap">
+          <button @click="goBack" class="back-btn" aria-label="Back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <div class="section-accent fashion-accent"></div>
+          <h1 class="page-title">Barang Saya</h1>
+        </div>
+        <p class="page-sub">Kelola, edit, dan pantau progres barang yang kamu jual.</p>
+      </section>
+
+      <!-- Filter tabs -->
+      <section class="section-gap reveal">
+        <div class="filter-track scrollbar-hide">
+          <button
+            v-for="f in filters"
+            :key="f.value"
+            @click="activeFilter = f.value"
+            class="filter-btn"
+            :class="activeFilter === f.value ? 'filter-active' : 'filter-inactive glass-panel'"
+          >
+            <span>{{ f.label }}</span>
+            <span class="filter-count" :class="activeFilter === f.value ? 'count-on' : 'count-off'">
+              {{ counts[f.value] || 0 }}
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Loading -->
+      <div v-if="loading" class="listing-list">
+        <div v-for="i in 3" :key="i" class="listing-card glass-panel">
+          <div class="flex gap-4 items-start">
+            <div class="skeleton w-24 h-24 rounded-xl flex-shrink-0"></div>
+            <div class="flex-1 flex flex-col gap-2 py-1">
+              <div class="skeleton skeleton-line w-3/4"></div>
+              <div class="skeleton skeleton-line-sm w-1/2"></div>
+              <div class="skeleton skeleton-line w-1/3 mt-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="error" class="error-banner">
+        <p class="error-text">{{ error }}</p>
+        <button @click="fetchListings" class="retry-btn">Coba Lagi</button>
+      </div>
+
+      <!-- Empty -->
+      <div v-else-if="filteredListings.length === 0" class="empty-state reveal">
+        <div class="empty-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 7 2-4h14l2 4"/><path d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7"/><path d="M3 7h18"/><path d="M9 11v4"/><path d="M15 11v4"/>
+          </svg>
+        </div>
+        <p class="empty-title">Belum Ada Barang</p>
+        <p class="empty-sub">
+          {{ activeFilter === 'all' ? 'Belum ada barang yang kamu jual.' : `Tidak ada barang dengan status "${activeLabelText}".` }}
+        </p>
+        <router-link to="/profile/sell" class="empty-cta">Pasang Barang →</router-link>
+      </div>
+
+      <!-- Listings -->
+      <div v-else class="listing-list">
+        <div
+          v-for="(p, idx) in filteredListings"
+          :key="p.id"
+          class="listing-card glass-panel reveal"
+          :class="`reveal-delay-${(idx % 3) + 1}`"
+        >
+          <!-- Top: thumb + info + status -->
+          <div class="listing-top">
+            <router-link :to="`/product/${p.id}`" class="thumb-link" aria-label="Lihat detail">
+              <div class="thumb">
+                <img v-if="p.images?.[0]" :src="p.images[0]" :alt="p.name" class="w-full h-full object-cover" />
+              </div>
+            </router-link>
+            <div class="listing-info">
+              <div class="info-head">
+                <p class="item-name">{{ p.name }}</p>
+                <span class="status-pill" :class="getStatusClass(p)">{{ getStatusLabel(p) }}</span>
+              </div>
+              <p class="item-meta">
+                <span v-if="p.categories?.name">{{ p.categories.name }}</span>
+                <span v-if="p.categories?.name && p.size"> · </span>
+                <span v-if="p.size">Size {{ p.size }}</span>
+                <span v-if="p.condition"> · {{ p.condition }}</span>
+              </p>
+              <p class="item-price">Rp {{ formatPrice(p.price) }}</p>
+            </div>
+          </div>
+
+          <!-- Progress stats -->
+          <div class="progress-row">
+            <div class="progress-stat">
+              <div class="stat-icon fashion-bg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 9 18l-5-5"/></svg>
+              </div>
+              <div class="stat-text">
+                <p class="stat-value">{{ p.sold_count || 0 }}</p>
+                <p class="stat-label">Terjual</p>
+              </div>
+            </div>
+            <div class="progress-stat">
+              <div class="stat-icon sports-bg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="stat-text">
+                <p class="stat-value">{{ p.pending_orders || 0 }}</p>
+                <p class="stat-label">Diproses</p>
+              </div>
+            </div>
+            <div class="progress-stat">
+              <div class="stat-icon dark-bg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+              </div>
+              <div class="stat-text">
+                <p class="stat-value">{{ formatDate(p.created_at) }}</p>
+                <p class="stat-label">Dipasang</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="action-row">
+            <button
+              type="button"
+              class="action-btn toggle-btn"
+              :disabled="togglingId === p.id"
+              @click="toggleAvailability(p)"
+            >
+              <svg v-if="p.is_available" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              {{ togglingId === p.id ? '...' : (p.is_available ? 'Nonaktifkan' : 'Aktifkan') }}
+            </button>
+            <button
+              type="button"
+              class="action-btn edit-btn"
+              @click="editListing(p.id)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+            <button
+              type="button"
+              class="action-btn delete-btn"
+              :disabled="deletingId === p.id"
+              @click="confirmDelete(p)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              {{ deletingId === p.id ? '...' : 'Hapus' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Delete confirm modal -->
+    <transition name="modal-fade">
+      <div v-if="pendingDelete" class="modal-overlay" @click.self="cancelDelete">
+        <div class="modal-card">
+          <div class="modal-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </div>
+          <p class="modal-title">Hapus Barang?</p>
+          <p class="modal-sub">"{{ pendingDelete.name }}" akan dihapus permanen dari katalog kamu.</p>
+          <div class="modal-actions">
+            <button class="modal-btn modal-cancel" @click="cancelDelete" :disabled="deletingId">Batal</button>
+            <button class="modal-btn modal-confirm" @click="doDelete" :disabled="deletingId">{{ deletingId ? 'Menghapus...' : 'Hapus' }}</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useScrollReveal } from '@/composables/useScrollReveal'
+import { useAuth } from '@/composables/useAuth'
+import AuthGate from '@/components/AuthGate.vue'
+import api from '@/services/api'
+
+useScrollReveal()
+const router = useRouter()
+const { isLoggedIn } = useAuth()
+
+const goBack = () => {
+  if (window.history.state?.back) router.back()
+  else router.push('/profile')
+}
+
+const filters = [
+  { label: 'Semua',     value: 'all' },
+  { label: 'Aktif',     value: 'active' },
+  { label: 'Terjual',   value: 'sold' },
+  { label: 'Nonaktif',  value: 'inactive' },
+]
+const activeFilter = ref('all')
+const activeLabelText = computed(() => filters.find(f => f.value === activeFilter.value)?.label || '')
+
+const listings = ref([])
+const loading  = ref(false)
+const error    = ref(null)
+
+const togglingId = ref(null)
+const deletingId = ref(null)
+const pendingDelete = ref(null)
+
+const formatPrice = (p) => (p || 0).toLocaleString('id-ID')
+const formatDate = (iso) => {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '-'
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })
+}
+
+const getStatusKey = (p) => {
+  if (p.is_available) return 'active'
+  if ((p.sold_count || 0) > 0) return 'sold'
+  return 'inactive'
+}
+const getStatusLabel = (p) => ({ active: 'Aktif', sold: 'Terjual', inactive: 'Nonaktif' }[getStatusKey(p)])
+const getStatusClass = (p) => ({ active: 'status-active', sold: 'status-sold', inactive: 'status-inactive' }[getStatusKey(p)])
+
+const counts = computed(() => {
+  const c = { all: listings.value.length, active: 0, sold: 0, inactive: 0 }
+  for (const p of listings.value) c[getStatusKey(p)]++
+  return c
+})
+
+const filteredListings = computed(() => {
+  if (activeFilter.value === 'all') return listings.value
+  return listings.value.filter(p => getStatusKey(p) === activeFilter.value)
+})
+
+async function fetchListings() {
+  if (!isLoggedIn.value) return
+  loading.value = true
+  error.value = null
+  try {
+    const data = await api.get('/users/me/products')
+    listings.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    error.value = e.message || 'Gagal memuat barang.'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function toggleAvailability(p) {
+  togglingId.value = p.id
+  const prev = p.is_available
+  // Optimistic
+  p.is_available = !prev
+  try {
+    await api.patch(`/products/${p.id}`, { is_available: !prev })
+  } catch (e) {
+    p.is_available = prev
+    error.value = e.message || 'Gagal mengubah status.'
+  } finally {
+    togglingId.value = null
+  }
+}
+
+const editListing = (id) => router.push(`/profile/sell?edit=${id}`)
+
+const confirmDelete = (p) => { pendingDelete.value = p }
+const cancelDelete = () => { if (!deletingId.value) pendingDelete.value = null }
+
+async function doDelete() {
+  if (!pendingDelete.value) return
+  const id = pendingDelete.value.id
+  deletingId.value = id
+  try {
+    await api.delete(`/products/${id}`)
+    listings.value = listings.value.filter(x => x.id !== id)
+    pendingDelete.value = null
+  } catch (e) {
+    error.value = e.message || 'Gagal menghapus barang.'
+  } finally {
+    deletingId.value = null
+  }
+}
+
+onMounted(fetchListings)
+</script>
+
+<style scoped>
+@reference "../assets/main.css";
+
+.listings-root { @apply pb-8; padding: 1rem; }
+.section-gap { @apply mb-6; }
+.header-wrap { @apply flex items-center gap-3; }
+.back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 bg-white transition-all duration-200; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; }
+.back-btn:hover { color: #C1121F; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+.section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
+.fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
+.page-title { @apply text-2xl font-bold tracking-tight text-gray-900; font-family: 'CalSans', serif; }
+.page-sub { @apply text-sm text-black/55 mt-2 ml-12; }
+
+/* Filter tabs */
+.filter-track { @apply flex gap-2.5 overflow-x-auto pb-2; }
+.filter-btn { @apply flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold rounded-xl; border: 2px solid #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.filter-active { @apply text-white; background: linear-gradient(135deg, #C1121F, #780000); box-shadow: 3px 3px 0 0 #111; }
+.filter-active:hover { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
+.filter-inactive { @apply text-black/70; }
+.filter-inactive:hover { box-shadow: 2px 2px 0 0 #111; transform: translate(-1px,-1px); }
+.filter-count { @apply text-[10px] font-bold px-2 py-0.5 rounded-md min-w-[20px] text-center; }
+.count-on  { background: rgba(255,255,255,0.22); color: white; }
+.count-off { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.6); }
+
+/* Listing cards */
+.listing-list { @apply flex flex-col gap-4; }
+.listing-card { @apply rounded-2xl p-4 sm:p-5; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.listing-top { @apply flex items-start gap-3 mb-3; }
+.thumb-link { @apply flex-shrink-0; }
+.thumb { @apply w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden; background: #FDF0D5; border: 2px solid #111; }
+.listing-info { @apply flex-1 min-w-0; }
+.info-head { @apply flex items-start justify-between gap-2; }
+.item-name { @apply text-sm font-bold text-gray-900 flex-1; line-height: 1.3; }
+.item-meta { @apply text-xs text-black/50 mt-0.5; }
+.item-price { @apply text-sm font-bold text-[#C1121F] mt-1; font-family: 'CalSans', serif; }
+
+.status-pill { @apply text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider whitespace-nowrap flex-shrink-0; }
+.status-active   { background: rgba(22,163,74,0.14); color: #166534; }
+.status-sold     { background: rgba(102,155,188,0.18); color: #003049; }
+.status-inactive { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.5); }
+
+/* Progress */
+.progress-row { @apply grid grid-cols-3 gap-2 mb-3 pt-3 border-t border-black/5; }
+.progress-stat { @apply flex items-center gap-2 min-w-0; }
+.stat-icon { @apply w-7 h-7 rounded-lg flex items-center justify-center text-white flex-shrink-0; border: 2px solid #111; }
+.fashion-bg { background: linear-gradient(135deg, #C1121F, #780000); }
+.sports-bg { background: linear-gradient(135deg, #669BBC, #003049); }
+.dark-bg { background: linear-gradient(135deg, #111111, #333333); }
+.stat-text { @apply min-w-0; }
+.stat-value { @apply text-sm font-bold text-gray-900 truncate; font-family: 'CalSans', serif; }
+.stat-label { @apply text-[9px] font-bold uppercase tracking-wider text-black/50; }
+
+/* Actions */
+.action-row { @apply flex gap-2 flex-wrap; }
+.action-btn { @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg; border: 2px solid #111; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease; }
+.action-btn:disabled { @apply opacity-60 cursor-not-allowed; }
+.toggle-btn { @apply bg-white text-black/75; box-shadow: 2px 2px 0 0 #111; }
+.toggle-btn:hover:not(:disabled) { background: #FDF0D5; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+.edit-btn { @apply text-white; background: linear-gradient(135deg, #669BBC, #003049); box-shadow: 2px 2px 0 0 #111; }
+.edit-btn:hover:not(:disabled) { transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+.delete-btn { @apply text-white; background: linear-gradient(135deg, #C1121F, #780000); box-shadow: 2px 2px 0 0 #111; }
+.delete-btn:hover:not(:disabled) { transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+
+/* Empty / error / skeleton */
+.empty-state { @apply flex flex-col items-center justify-center text-center py-20; }
+.empty-icon { @apply w-20 h-20 rounded-full flex items-center justify-center mb-5; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.empty-title { @apply text-xl font-bold text-gray-900 mb-1; font-family: 'CalSans', serif; }
+.empty-sub { @apply text-sm text-black/50 mb-6 max-w-xs; }
+.empty-cta { @apply inline-block px-6 py-3 text-sm font-bold rounded-xl text-white no-underline; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.empty-cta:hover { transform: translate(2px,2px); box-shadow: 2px 2px 0 0 #111; }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.skeleton { @apply animate-pulse bg-black/10 rounded-xl; }
+.skeleton-line { height: 14px; @apply rounded-md; }
+.skeleton-line-sm { height: 12px; @apply rounded-md; }
+.error-banner { @apply flex flex-col items-center gap-3 py-10 text-center; }
+.error-text { @apply text-sm font-semibold text-[#C1121F]; }
+.retry-btn { @apply px-5 py-2 text-sm font-bold rounded-xl text-white; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+
+/* Delete confirm modal */
+.modal-overlay { @apply fixed inset-0 z-50 flex items-center justify-center p-5; background: rgba(0,0,0,0.45); backdrop-filter: blur(6px); }
+.modal-card { @apply w-full max-w-sm rounded-2xl p-6 bg-white text-center; border: 2px solid #111; box-shadow: 6px 6px 0 0 #111; }
+.modal-icon { @apply w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+.modal-title { @apply text-lg font-bold text-gray-900 mb-1; font-family: 'CalSans', serif; }
+.modal-sub { @apply text-sm text-black/55 mb-5; }
+.modal-actions { @apply flex gap-2; }
+.modal-btn { @apply flex-1 py-2.5 text-sm font-bold rounded-xl; border: 2px solid #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.modal-btn:disabled { @apply opacity-60 cursor-not-allowed; }
+.modal-cancel { @apply bg-white text-black/75; box-shadow: 3px 3px 0 0 #111; }
+.modal-cancel:hover:not(:disabled) { background: #FDF0D5; transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
+.modal-confirm { @apply text-white; background: linear-gradient(135deg, #C1121F, #780000); box-shadow: 3px 3px 0 0 #111; }
+.modal-confirm:hover:not(:disabled) { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+</style>
+</file>
 
 <file path=".prettierrc.json">
 {
@@ -271,6 +675,56 @@ defineProps({
   box-shadow: 0 0 0 0 #111;
 }
 </style>
+</file>
+
+<file path="src/composables/useChats.js">
+import { ref, computed } from 'vue'
+import api from '@/services/api'
+
+const chats = ref([])
+const _loaded = ref(false)
+
+const totalUnread = computed(() =>
+  chats.value.reduce((s, c) => s + (c.unread || 0), 0)
+)
+
+export function useChats() {
+  async function fetchChats() {
+    try {
+      const data = await api.get('/chats')
+      chats.value = Array.isArray(data) ? data : []
+      _loaded.value = true
+    } catch {
+      chats.value = []
+    }
+  }
+
+  async function markChatRead(chatId) {
+    const idx = chats.value.findIndex(c => c.id === chatId)
+    let prev = null
+    if (idx !== -1) {
+      prev = {
+        unread: chats.value[idx].unread || 0,
+        buyer_unread: chats.value[idx].buyer_unread || 0,
+        seller_unread: chats.value[idx].seller_unread || 0,
+      }
+      chats.value[idx].unread = 0
+      chats.value[idx].buyer_unread = 0
+      chats.value[idx].seller_unread = 0
+    }
+    try {
+      await api.patch(`/chats/${chatId}/read`)
+    } catch {
+      if (idx !== -1 && prev) {
+        chats.value[idx].unread = prev.unread
+        chats.value[idx].buyer_unread = prev.buyer_unread
+        chats.value[idx].seller_unread = prev.seller_unread
+      }
+    }
+  }
+
+  return { chats, totalUnread, _loaded, fetchChats, markChatRead }
+}
 </file>
 
 <file path="src/composables/useTransaction.js">
@@ -1596,6 +2050,140 @@ const sections = [
   transform: translate(3px, 3px);
   box-shadow: 0 0 0 0 #111;
 }
+</style>
+</file>
+
+<file path="src/views/WishlistView.vue">
+<template>
+  <div class="wl-root">
+
+    <AuthGate v-if="!isLoggedIn" title="Login untuk Wishlist" message="Masuk dulu untuk lihat barang favoritmu." />
+
+    <template v-else>
+      <section class="section-gap">
+        <div class="header-wrap">
+          <button @click="$router.back()" class="back-btn" aria-label="Back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <div class="section-accent fashion-accent"></div>
+          <h1 class="page-title">Wishlist <span v-if="items.length" class="count">({{ items.length }})</span></h1>
+        </div>
+      </section>
+
+      <!-- Loading -->
+      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div v-for="i in 8" :key="i" class="skeleton aspect-square rounded-2xl"></div>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="error" class="error-banner">
+        <p class="error-text">{{ error }}</p>
+        <button @click="fetchWishlist" class="retry-btn">Coba Lagi</button>
+      </div>
+
+      <!-- Empty -->
+      <div v-else-if="items.length === 0" class="empty-state reveal">
+        <div class="empty-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <p class="empty-title">Wishlist Kosong</p>
+        <p class="empty-sub">Tap ikon hati di produk untuk menyimpan favorit.</p>
+        <router-link to="/catalog" class="empty-cta">Browse Katalog</router-link>
+      </div>
+
+      <!-- Grid -->
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <ProductCard
+          v-for="(item, idx) in items"
+          :key="item.id"
+          :product="item.product"
+          class="reveal"
+          :class="`reveal-delay-${(idx % 4) + 1}`"
+        />
+      </div>
+    </template>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useScrollReveal } from '@/composables/useScrollReveal'
+import { useAuth } from '@/composables/useAuth'
+import AuthGate from '@/components/AuthGate.vue'
+import ProductCard from '@/components/ProductCard.vue'
+import api from '@/services/api'
+
+useScrollReveal()
+const { isLoggedIn } = useAuth()
+
+const items = ref([])
+const loading = ref(false)
+const error = ref(null)
+
+const mapItem = (w) => {
+  const p = w.products || w.product || {}
+  const imgs = Array.isArray(p.images) ? p.images : []
+  return {
+    id: w.id,
+    product_id: p.id,
+    product: {
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      img: imgs[0] || '',
+      images: imgs,
+      sold: p.sold_count || 0,
+      sold_count: p.sold_count || 0,
+      size: p.size || '',
+      category: p.categories?.name || '',
+    }
+  }
+}
+
+async function fetchWishlist() {
+  if (!isLoggedIn.value) return
+  loading.value = true
+  error.value = null
+  try {
+    const data = await api.get('/wishlist')
+    const list = Array.isArray(data) ? data : []
+    items.value = list.map(mapItem).filter(i => i.product_id)
+  } catch (e) {
+    error.value = e.message || 'Gagal memuat wishlist.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchWishlist)
+</script>
+
+<style scoped>
+@reference "../assets/main.css";
+
+.wl-root { @apply pb-8; padding: 1rem; }
+.section-gap { @apply mb-6; }
+.header-wrap { @apply flex items-center gap-3; }
+.back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 bg-white transition-all duration-200 active:scale-90; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; }
+.back-btn:hover { color: #C1121F; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+.section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
+.fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
+.page-title { @apply text-2xl font-bold tracking-tight text-gray-900; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
+.count { @apply text-base font-medium text-black/40 ml-1; font-family: 'Helvetica', sans-serif; }
+
+.skeleton { @apply animate-pulse bg-black/10; }
+
+.error-banner { @apply flex flex-col items-center gap-3 py-10 text-center; }
+.error-text { @apply text-sm font-semibold text-[#C1121F]; }
+.retry-btn { @apply px-5 py-2 text-sm font-bold rounded-xl text-white; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+
+.empty-state { @apply flex flex-col items-center justify-center text-center py-20; }
+.empty-icon { @apply w-20 h-20 rounded-full flex items-center justify-center mb-5; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.empty-title { @apply text-xl font-bold text-gray-900 mb-1; font-family: 'CalSans', serif; }
+.empty-sub { @apply text-sm text-black/50 mb-6; }
+.empty-cta { @apply inline-block px-6 py-3 text-sm font-bold rounded-xl text-white no-underline; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.empty-cta:hover { transform: translate(2px,2px); box-shadow: 2px 2px 0 0 #111; }
 </style>
 </file>
 
@@ -3659,15 +4247,21 @@ const cancelOrder = async (id) => {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div class="section-accent fashion-accent"></div>
-          <h1 class="page-title">Jual Barang</h1>
+          <h1 class="page-title">{{ isEdit ? 'Edit Barang' : 'Jual Barang' }}</h1>
         </div>
-        <p class="page-sub">Lengkapi detail barang preloved kamu di bawah.</p>
+        <p class="page-sub">{{ isEdit ? 'Perbarui detail barang kamu di bawah.' : 'Lengkapi detail barang preloved kamu di bawah.' }}</p>
       </section>
 
       <!-- Error banner -->
       <div v-if="submitError" class="submit-error-banner">{{ submitError }}</div>
 
-      <form @submit.prevent="handleSubmit" class="form-stack">
+      <!-- Loading state for edit mode -->
+      <div v-if="loadingProduct" class="loading-state">
+        <svg class="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
+        <p>Memuat data barang...</p>
+      </div>
+
+      <form v-else @submit.prevent="handleSubmit" class="form-stack">
         <!-- Images -->
         <section class="reveal">
           <p class="field-label">Foto Barang</p>
@@ -3744,7 +4338,7 @@ const cancelOrder = async (id) => {
             <svg class="animate-spin inline-block mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
             Memproses...
           </span>
-          <span v-else>Pasang Barang</span>
+          <span v-else>{{ isEdit ? 'Simpan Perubahan' : 'Pasang Barang' }}</span>
           <svg v-if="!submitting" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </form>
@@ -3754,8 +4348,8 @@ const cancelOrder = async (id) => {
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
 import AuthGate from '@/components/AuthGate.vue'
@@ -3764,8 +4358,13 @@ import { uploadProductImage } from '@/services/supabase'
 
 useScrollReveal()
 const router = useRouter()
+const route  = useRoute()
 const { isLoggedIn } = useAuth()
 const goBack = () => { if (window.history.state?.back) router.back(); else router.push('/profile') }
+
+const editId = computed(() => route.query.edit || null)
+const isEdit = computed(() => !!editId.value)
+const loadingProduct = ref(false)
 
 const categories = ['Fashion', 'Sports']
 const fashionSubcats = ['T-Shirts', 'Hoodies', 'Jackets', 'Pants', 'Shorts', 'Shoes', 'Bags', 'Accessories']
@@ -3808,19 +4407,66 @@ const formatPrice = (p) => 'Rp ' + (p || 0).toLocaleString('id-ID')
 const submitting  = ref(false)
 const submitError = ref('')
 
+// Reverse: category_id (1-16) → { category, subcategory }
+const categoryFromId = (id) => {
+  const entry = Object.entries(categoryIdMap).find(([, v]) => v === id)
+  if (!entry) return null
+  const [subcategory, cid] = entry
+  return { subcategory, category: cid <= 8 ? 'Fashion' : 'Sports' }
+}
+
+// Load product in edit mode
+async function loadProduct() {
+  if (!isEdit.value || !isLoggedIn.value) return
+  loadingProduct.value = true
+  submitError.value = ''
+  try {
+    const data = await api.get(`/products/${editId.value}`)
+    form.name        = data.name || ''
+    form.description = data.description || ''
+    form.price       = data.price ?? null
+    form.condition   = data.condition || 'Like New'
+    form.size        = data.size || 'M'
+    const cat = categoryFromId(data.category_id)
+    if (cat) {
+      form.category    = cat.category
+      form.subcategory = cat.subcategory
+    }
+    const imgs = Array.isArray(data.images) ? data.images : []
+    for (let i = 0; i < 4; i++) {
+      imageFiles.value[i] = null
+      imagePreviews.value[i] = imgs[i] || null
+    }
+  } catch (e) {
+    submitError.value = e.message || 'Gagal memuat data barang.'
+  } finally {
+    loadingProduct.value = false
+  }
+}
+
+onMounted(loadProduct)
+
 async function handleSubmit() {
   if (!form.subcategory) { submitError.value = 'Pilih subkategori terlebih dahulu.'; return }
-  const files = imageFiles.value.filter(Boolean)
-  if (files.length === 0) { submitError.value = 'Tambahkan minimal satu foto.'; return }
+  const hasAnyImage = imageFiles.value.some(Boolean) || imagePreviews.value.some(Boolean)
+  if (!hasAnyImage) { submitError.value = 'Tambahkan minimal satu foto.'; return }
 
   submitting.value = true
   submitError.value = ''
   try {
-    // 1. Upload images to Supabase Storage
-    const imageUrls = await Promise.all(files.map(f => uploadProductImage(f)))
+    // Build final image URL list: upload new files, keep existing URLs as-is
+    const imageUrls = []
+    for (let i = 0; i < 4; i++) {
+      const file = imageFiles.value[i]
+      const existing = imagePreviews.value[i]
+      if (file) {
+        imageUrls.push(await uploadProductImage(file))
+      } else if (existing && /^https?:\/\//.test(existing)) {
+        imageUrls.push(existing)
+      }
+    }
 
-    // 2. POST product with snake_case fields
-    await api.post('/products', {
+    const payload = {
       name:        form.name,
       description: form.description,
       price:       form.price,
@@ -3828,12 +4474,19 @@ async function handleSubmit() {
       condition:   form.condition,
       size:        form.size,
       images:      imageUrls,
-    })
+    }
 
-    alert('Barang berhasil dipasang!')
-    router.push('/profile')
+    if (isEdit.value) {
+      await api.patch(`/products/${editId.value}`, payload)
+      alert('Perubahan berhasil disimpan!')
+      router.push('/profile/listings')
+    } else {
+      await api.post('/products', payload)
+      alert('Barang berhasil dipasang!')
+      router.push('/profile')
+    }
   } catch (e) {
-    submitError.value = e.message || 'Gagal memasang barang. Silakan coba lagi.'
+    submitError.value = e.message || (isEdit.value ? 'Gagal menyimpan perubahan.' : 'Gagal memasang barang. Silakan coba lagi.')
   } finally {
     submitting.value = false
   }
@@ -3900,6 +4553,7 @@ async function handleSubmit() {
 .submit-btn:hover:not(:disabled) { transform: translate(2px,2px); box-shadow: 2px 2px 0 0 #111; }
 .submit-btn:active:not(:disabled) { transform: translate(4px,4px); box-shadow: 0 0 0 0 #111; }
 .submit-btn:disabled { @apply opacity-70 cursor-not-allowed; }
+.loading-state { @apply flex flex-col items-center justify-center gap-2 py-16 text-black/60 text-sm font-semibold; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
@@ -5152,774 +5806,6 @@ async function fetchSports() {
 </style>
 </file>
 
-<file path="src/views/ProfileView.vue">
-<template>
-  <div class="profile-root">
-
-    <!-- ══════════════ GUEST ══════════════ -->
-    <section v-if="!isLoggedIn" class="reveal mb-6">
-      <div class="hero-card">
-        <div class="hero-overlay"></div>
-        <div class="hero-deco-1"></div>
-        <div class="hero-deco-2"></div>
-        <div class="hero-avatar">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <div class="hero-content">
-          <h2 class="hero-name">Guest</h2>
-          <p class="hero-loc">Belum login ke SecondSpace</p>
-          <router-link to="/login" class="hero-edit-btn">Login Sekarang</router-link>
-        </div>
-      </div>
-      <p class="guest-switch">Belum punya akun? <router-link to="/register" class="guest-switch-link">Daftar</router-link></p>
-    </section>
-
-    <!-- ══════════════ LOGGED IN ══════════════ -->
-    <section v-else class="reveal mb-6">
-      <div class="hero-card">
-        <div class="hero-overlay"></div>
-        <div class="hero-deco-1"></div>
-        <div class="hero-deco-2"></div>
-        <div class="hero-avatar">{{ (user?.name || 'U')[0].toUpperCase() }}</div>
-        <div class="hero-content">
-          <h2 class="hero-name">{{ user?.name || 'Pengguna' }}</h2>
-          <p class="hero-loc">{{ user?.city || 'Indonesia' }}</p>
-          <div class="hero-stats-pill">
-            <span class="hero-stat-text">⭐ {{ user?.rating || '5.0' }}</span>
-            <span class="hero-stat-divider"></span>
-            <span class="hero-stat-text">{{ user?.total_sold || 0 }} Terjual</span>
-            <span class="hero-stat-divider"></span>
-            <span class="hero-stat-text">{{ user?.total_purchased || 0 }} Dibeli</span>
-          </div>
-          <router-link to="/profile/edit" class="hero-edit-btn">Edit Profile</router-link>
-        </div>
-      </div>
-
-      <!-- Stat cards -->
-      <div class="stats-grid">
-        <!-- Skeleton while stats loading -->
-        <template v-if="loadingStats">
-          <div v-for="i in 3" :key="i" class="stat-card glass-panel"><div class="skeleton h-6 w-10 mx-auto mb-1 rounded-md"></div><div class="skeleton h-3 w-16 mx-auto rounded-md"></div></div>
-        </template>
-        <template v-else>
-          <div v-for="stat in stats" :key="stat.label" class="stat-card glass-panel">
-            <p class="stat-value" :style="{ color: stat.color }">{{ stat.value }}</p>
-            <p class="stat-label">{{ stat.label }}</p>
-          </div>
-        </template>
-      </div>
-    </section>
-
-    <!-- ══════════════ MENU ══════════════ -->
-    <section v-if="isLoggedIn" class="menu-section">
-      <div v-for="(group, gi) in menuGroups" :key="group.title" class="reveal" :class="`reveal-delay-${(gi % 3) + 1}`">
-        <div class="menu-group-header">
-          <div class="section-accent fashion-accent"></div>
-          <p class="menu-group-title">{{ group.title }}</p>
-        </div>
-        <div class="menu-card glass-panel">
-          <router-link v-for="item in group.items" :key="item.label" :to="item.path" class="menu-item">
-            <div class="menu-icon" v-html="icons[item.icon]"></div>
-            <span class="menu-label">{{ item.label }}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="menu-chevron"><path d="m9 18 6-6-6-6"/></svg>
-          </router-link>
-        </div>
-      </div>
-
-      <button @click="handleLogout" class="logout-btn" :disabled="loggingOut">
-        {{ loggingOut ? 'Keluar...' : 'Keluar' }}
-      </button>
-    </section>
-
-  </div>
-</template>
-
-<script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useScrollReveal } from '@/composables/useScrollReveal'
-import { useAuth } from '@/composables/useAuth'
-import api from '@/services/api'
-
-useScrollReveal()
-const router = useRouter()
-const { user, isLoggedIn, logout } = useAuth()
-
-const loggingOut  = ref(false)
-const loadingStats = ref(false)
-const stats = ref([
-  { label: 'Pembelian', value: 0, color: '#C1121F' },
-  { label: 'Penjualan', value: 0, color: '#780000' },
-  { label: 'Wishlist',  value: 0, color: '#669BBC' },
-])
-
-async function handleLogout() {
-  loggingOut.value = true
-  try { await logout() } finally { loggingOut.value = false }
-  router.push('/')
-}
-
-async function fetchStats() {
-  if (!isLoggedIn.value) return
-  loadingStats.value = true
-  try {
-    const data = await api.get('/users/me/stats')
-    stats.value = [
-      { label: 'Pembelian', value: data.purchases ?? data.total_purchased ?? user.value?.total_purchased ?? 0, color: '#C1121F' },
-      { label: 'Penjualan', value: data.sales    ?? data.total_sold     ?? user.value?.total_sold     ?? 0, color: '#780000' },
-      { label: 'Wishlist',  value: data.wishlist  ?? 0,                                                       color: '#669BBC' },
-    ]
-  } catch {
-    // Fail silently — stats are decorative
-  } finally {
-    loadingStats.value = false
-  }
-}
-
-onMounted(fetchStats)
-
-const wrap = (paths) =>
-  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`
-
-const icons = {
-  bag:     wrap('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
-  package: wrap('<path d="m7.5 4.27 9 5.15"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
-  tag:     wrap('<path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'),
-  inbox:   wrap('<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>'),
-  user:    wrap('<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
-  pin:     wrap('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'),
-  bell:    wrap('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'),
-  help:    wrap('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
-  doc:     wrap('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'),
-}
-
-const menuGroups = [
-  { title: 'Transaksi', items: [
-    { icon: 'bag',     label: 'Pesanan Saya',      path: '/cart' },
-    { icon: 'package', label: 'Riwayat Pembelian', path: '/profile/history' },
-    { icon: 'tag',     label: 'Jual Barang',       path: '/profile/sell' },
-    { icon: 'inbox',   label: 'Pesanan Masuk',     path: '/profile/sales' },
-  ]},
-  { title: 'Akun', items: [
-    { icon: 'user', label: 'Edit Profil', path: '/profile/edit' },
-    { icon: 'pin',  label: 'Alamat Saya', path: '/profile/address' },
-    { icon: 'bell', label: 'Notifikasi',  path: '/notifications' },
-  ]},
-  { title: 'Lainnya', items: [
-    { icon: 'help', label: 'Bantuan',            path: '/profile/help' },
-    { icon: 'doc',  label: 'Syarat & Ketentuan', path: '/profile/terms' },
-  ]},
-]
-</script>
-
-<style scoped>
-@reference "../assets/main.css";
-
-.profile-root { @apply pb-8; padding: 1rem; }
-.hero-card { @apply relative overflow-hidden rounded-3xl p-6 sm:p-8 text-white flex flex-col items-center; background: linear-gradient(135deg, #003049, #669BBC); border: 2px solid #111; box-shadow: 6px 6px 0 0 #111; }
-.hero-overlay { @apply absolute inset-0 bg-white/5 pointer-events-none; }
-.hero-deco-1 { @apply absolute -top-12 -right-12 w-40 h-40 rounded-full pointer-events-none; background: rgba(255,255,255,0.08); }
-.hero-deco-2 { @apply absolute -bottom-16 -left-16 w-48 h-48 rounded-full pointer-events-none; background: rgba(255,255,255,0.06); }
-.hero-avatar { @apply w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mb-4 z-10; background: white; color: #003049; border: 3px solid #111; box-shadow: 4px 4px 0 0 #111; }
-.hero-content { @apply z-10 flex flex-col items-center text-center; }
-.hero-name { @apply text-2xl font-bold mb-1; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
-.hero-loc { @apply text-sm text-white/80 mb-3 tracking-wide; }
-.hero-stats-pill { @apply flex items-center gap-2 sm:gap-3 mb-4 px-3 sm:px-4 py-1.5 rounded-lg border border-white/10 max-w-full; background: rgba(0,0,0,0.2); backdrop-filter: blur(8px); }
-.hero-stat-text { @apply text-[11px] sm:text-xs font-semibold whitespace-nowrap; }
-.hero-stat-divider { @apply w-px h-3; background: rgba(255,255,255,0.3); }
-.hero-edit-btn { @apply z-10 px-6 py-2 text-xs font-bold rounded-xl bg-white text-[#003049] no-underline; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.hero-edit-btn:hover { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
-.stats-grid { @apply grid grid-cols-3 gap-2 sm:gap-3 -mt-5 px-1 sm:px-2 relative z-20; }
-.stat-card { @apply rounded-2xl p-3 sm:p-4 text-center bg-white; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.stat-card:hover { transform: translate(1px,1px); box-shadow: 2px 2px 0 0 #111; }
-.stat-value { @apply text-lg sm:text-xl font-bold mb-1; font-family: 'CalSans', serif; }
-.stat-label { @apply text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-black/60; }
-.menu-section { @apply space-y-5; }
-.menu-group-header { @apply flex items-center gap-2 mb-2 pl-1; }
-.section-accent { @apply w-1 h-4 rounded-full flex-shrink-0; }
-.fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
-.menu-group-title { @apply text-[11px] font-bold uppercase tracking-widest text-black/50; }
-.menu-card { @apply rounded-2xl overflow-hidden divide-y divide-black; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
-.menu-item { @apply flex items-center gap-3 px-4 sm:px-5 py-3.5 sm:py-4 no-underline transition-all duration-200 hover:bg-white/60 active:scale-[0.99]; }
-.menu-icon { @apply w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0; background: rgba(193,18,31,0.1); color: #C1121F; border: 2px solid #111; }
-.menu-item:hover .menu-icon { background: rgba(193,18,31,0.14); }
-.menu-label { @apply text-sm font-bold flex-1 text-black/80; }
-.menu-chevron { @apply text-black/20 flex-shrink-0; }
-.guest-switch { @apply text-center text-sm text-black/60 mt-5; }
-.guest-switch-link { @apply font-bold text-[#C1121F] no-underline hover:underline; }
-.logout-btn { @apply w-full py-3.5 mt-2 text-sm font-bold rounded-xl text-[#C1121F] bg-white; border: 2px solid #111; box-shadow: 4px 4px 0 0 #C1121F; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease; }
-.logout-btn:hover:not(:disabled) { background: #C1121F; color: white; transform: translate(2px,2px); box-shadow: 2px 2px 0 0 #C1121F; }
-.logout-btn:disabled { @apply opacity-60 cursor-not-allowed; }
-.skeleton { @apply animate-pulse bg-black/10; }
-</style>
-</file>
-
-<file path="src/components/NavbarTop.vue">
-<template>
-  <nav class="navbar-top fixed top-0 w-full flex justify-center z-50 bg-[#FDF0D5]">
-    <div class="w-full max-w-5xl px-4 h-14 flex items-center justify-between gap-4">
-      <!-- Logo -->
-      <router-link to="/" class="flex-shrink-0">
-        <img src="@/assets/Img/logo.svg" alt="SecondSpace" class="h-8" />
-      </router-link>
-
-      <!-- Search Bar -->
-      <div class="flex-1 max-w-xl">
-        <div class="relative">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search Bar"
-            class="search-input"
-            @keyup.enter="handleSearch"
-          />
-          <button class="search-btn" @click="handleSearch" aria-label="Search">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Icons -->
-      <div class="flex items-center gap-3 ml-2">
-        <router-link to="/catalog" class="nav-icon-btn" aria-label="Catalog">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-          </svg>
-        </router-link>
-
-        <template v-if="isLoggedIn">
-          <router-link to="/cart" class="nav-icon-btn relative">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
-            <span v-if="cartCount > 0" class="absolute -top-1 -right-1 bg-[#C1121F] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{{ cartCount }}</span>
-          </router-link>
-
-          <router-link to="/chat" class="nav-icon-btn relative">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <span v-if="chatCount > 0" class="absolute -top-1 -right-1 bg-[#C1121F] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{{ chatCount }}</span>
-          </router-link>
-
-          <router-link to="/notifications" class="nav-icon-btn relative">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <span v-if="notifCount > 0" class="absolute -top-1 -right-1 bg-[#C1121F] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{{ notifCount }}</span>
-          </router-link>
-
-          <router-link to="/profile" class="nav-icon-btn">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </router-link>
-        </template>
-
-        <template v-else>
-          <router-link to="/login" class="nav-text-btn">Login</router-link>
-          <router-link to="/register" class="nav-cta-btn">Register</router-link>
-        </template>
-      </div>
-    </div>
-  </nav>
-  <!-- Spacer -->
-  <div class="h-14"></div>
-</template>
-
-<script setup>
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
-import { useNotifications } from '@/composables/useNotifications'
-import api from '@/services/api'
-
-const router = useRouter()
-const { isLoggedIn } = useAuth()
-const { unreadCount, fetchNotifications } = useNotifications()
-const searchQuery = ref('')
-const cartCount = ref(0)
-const chatCount = ref(0)
-
-// Fetch badge counts whenever auth state becomes true
-async function fetchCounts() {
-  if (!isLoggedIn.value) {
-    cartCount.value = 0
-    chatCount.value = 0
-    return
-  }
-  try {
-    const [cartData, chatData] = await Promise.allSettled([
-      api.get('/cart'),
-      api.get('/chats'),
-    ])
-    if (cartData.status === 'fulfilled') {
-      const list = Array.isArray(cartData.value) ? cartData.value : []
-      cartCount.value = list.reduce((s, i) => s + (i.qty || 1), 0)
-    }
-    if (chatData.status === 'fulfilled') {
-      const list = Array.isArray(chatData.value) ? chatData.value : []
-      chatCount.value = list.reduce((s, c) => s + (c.unread || c.buyer_unread || c.seller_unread || 0), 0)
-    }
-    // Fetch notifications into the shared store so unreadCount is live
-    await fetchNotifications()
-  } catch {
-    // fail silently — badges are decorative
-  }
-}
-
-// Run once on mount and whenever login state changes
-watch(isLoggedIn, fetchCounts, { immediate: true })
-
-const notifCount = unreadCount // reactive ref from singleton
-
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push({ path: '/catalog', query: { q: searchQuery.value } })
-  }
-}
-</script>
-
-<style scoped>
-
-@reference "../assets/main.css";
-
-.nav-icon-btn {
-  @apply p-1.5 rounded-lg hover:bg-black/5 transition-all duration-200 text-black/70 hover:text-black cursor-pointer flex items-center justify-center;
-}
-
-/* Brutalist search bar */
-.search-input {
-  @apply w-full h-9 pl-4 pr-10 rounded-xl bg-white text-sm font-body outline-none;
-  border: 2px solid #111;
-  box-shadow: 3px 3px 0 0 #111;
-  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
-}
-.search-input::placeholder {
-  @apply text-black/40;
-}
-.search-input:hover {
-  transform: translate(1px, 1px);
-  box-shadow: 2px 2px 0 0 #111;
-}
-.search-input:focus {
-  border-color: #C1121F;
-  transform: translate(1.5px, 1.5px);
-  box-shadow: 1.5px 1.5px 0 0 #111;
-}
-.search-btn {
-  @apply absolute right-2.5 top-1/2 -translate-y-1/2 text-black/60 hover:text-[#C1121F] transition-colors cursor-pointer;
-}
-.search-input:focus ~ .search-btn {
-  @apply text-[#C1121F];
-}
-
-/* Auth buttons (logged-out state) */
-.nav-text-btn {
-  @apply px-3 py-1.5 text-sm font-bold rounded-xl text-black/80 hover:text-[#C1121F] transition-colors;
-}
-.nav-cta-btn {
-  @apply px-3.5 py-1.5 text-sm font-bold rounded-xl bg-[#C1121F] text-white border-2 border-black;
-  box-shadow: 3px 3px 0 0 #111;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.nav-cta-btn:hover {
-  transform: translate(1.5px, 1.5px);
-  box-shadow: 1.5px 1.5px 0 0 #111;
-}
-</style>
-</file>
-
-<file path="src/router/index.js">
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '@/views/HomeView.vue'
-
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: HomeView,
-    },
-    {
-      path: '/catalog',
-      name: 'catalog',
-      component: () => import('@/views/CatalogView.vue'),
-    },
-    {
-      path: '/product/:id',
-      name: 'product-detail',
-      component: () => import('@/views/ProductDetailView.vue'),
-    },
-    {
-      path: '/cart',
-      name: 'cart',
-      component: () => import('@/views/CartView.vue'),
-    },
-    {
-      path: '/transaction',
-      name: 'transaction',
-      component: () => import('@/views/TransactionView.vue'),
-    },
-    {
-      path: '/chat',
-      name: 'chat',
-      component: () => import('@/views/ChatView.vue'),
-    },
-    {
-      path: '/notifications',
-      name: 'notifications',
-      component: () => import('@/views/NotificationView.vue'),
-    },
-    {
-      path: '/notifications/:id',
-      name: 'notification-detail',
-      component: () => import('@/views/NotificationDetailView.vue'),
-    },
-    {
-      path: '/profile',
-      name: 'profile',
-      component: () => import('@/views/ProfileView.vue'),
-    },
-    {
-      path: '/profile/history',
-      name: 'profile-history',
-      component: () => import('@/views/PurchaseHistoryView.vue'),
-    },
-    {
-      path: '/profile/history/:id/review',
-      name: 'profile-review',
-      component: () => import('@/views/ReviewView.vue'),
-    },
-    {
-      path: '/profile/sell',
-      name: 'profile-sell',
-      component: () => import('@/views/SellItemView.vue'),
-    },
-    {
-      path: '/profile/sales',
-      name: 'profile-sales',
-      component: () => import('@/views/SalesView.vue'),
-    },
-    {
-      path: '/profile/edit',
-      name: 'profile-edit',
-      component: () => import('@/views/EditProfileView.vue'),
-    },
-    {
-      path: '/profile/address',
-      name: 'profile-address',
-      component: () => import('@/views/AddressView.vue'),
-    },
-    {
-      path: '/profile/help',
-      name: 'profile-help',
-      component: () => import('@/views/HelpView.vue'),
-    },
-    {
-      path: '/profile/terms',
-      name: 'profile-terms',
-      component: () => import('@/views/TermsView.vue'),
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('@/views/LoginView.vue'),
-    },
-    {
-      path: '/register',
-      name: 'register',
-      component: () => import('@/views/RegisterView.vue'),
-    },
-  ],
-  scrollBehavior(to, from, savedPosition) {
-    if (savedPosition) return savedPosition
-    return { top: 0, behavior: 'smooth' }
-  }
-})
-
-export default router
-</file>
-
-<file path="src/views/ChatView.vue">
-<template>
-  <div class="chat-root">
-
-    <AuthGate v-if="!isLoggedIn" title="Login untuk Chat" message="Masuk dulu untuk chat dengan seller dan tanya barang." />
-
-    <!-- Chat List -->
-    <div v-else-if="!activeChatId">
-      <section class="section-gap">
-        <div class="section-title-wrap">
-          <div class="section-accent fashion-accent"></div>
-          <h1 class="page-title">Chat <span v-if="totalUnread > 0" class="unread-badge">{{ totalUnread }}</span></h1>
-        </div>
-      </section>
-
-      <!-- Loading skeleton -->
-      <div v-if="loadingChats" class="chat-list">
-        <div v-for="i in 3" :key="i" class="chat-item glass-panel">
-          <div class="skeleton w-12 h-12 rounded-full flex-shrink-0"></div>
-          <div class="flex-1 flex flex-col gap-2">
-            <div class="skeleton skeleton-line w-1/2"></div>
-            <div class="skeleton skeleton-line-sm w-3/4"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Error -->
-      <div v-else-if="errorChats" class="error-banner">
-        <p class="error-text">{{ errorChats }}</p>
-        <button @click="fetchChats" class="retry-btn">Coba Lagi</button>
-      </div>
-
-      <!-- Empty -->
-      <div v-else-if="chats.length === 0" class="empty-state reveal">
-        <div class="empty-icon">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </div>
-        <p class="empty-title">Belum Ada Percakapan</p>
-        <p class="empty-sub">Mulai chat dengan penjual untuk tanya barang.</p>
-      </div>
-
-      <!-- Chat cards -->
-      <div v-else class="chat-list">
-        <div v-for="(chat, idx) in chats" :key="chat.id" @click="openChat(chat)" class="chat-item glass-panel reveal" :class="`reveal-delay-${(idx % 4) + 1}`">
-          <div class="chat-avatar" :class="chat.gradient || 'avatar-fashion'">{{ (chat.name || chat.other_user?.name || '?')[0].toUpperCase() }}</div>
-          <div class="chat-info">
-            <div class="chat-info-top">
-              <p class="chat-name">{{ chat.name || chat.other_user?.name || 'Pengguna' }}</p>
-              <span class="chat-time">{{ chat.time || chat.last_message_at || '' }}</span>
-            </div>
-            <p class="chat-preview" :class="chat.unread ? 'chat-preview-unread' : ''">{{ chat.lastMessage || chat.last_message || '' }}</p>
-          </div>
-          <div v-if="chat.unread" class="chat-unread-pill">{{ chat.unread }}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Active Chat -->
-    <div v-else class="active-chat">
-      <div class="active-header">
-        <button @click="activeChatId = null" class="back-btn" aria-label="Back">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <div class="active-avatar">{{ (activeChat?.name || activeChat?.other_user?.name || '?')[0].toUpperCase() }}</div>
-        <div class="active-meta">
-          <p class="active-name">{{ activeChat?.name || activeChat?.other_user?.name || 'Pengguna' }}</p>
-          <div class="online-row"><span class="online-dot"></span><span class="online-text">Online</span></div>
-        </div>
-      </div>
-
-      <!-- Loading messages -->
-      <div v-if="loadingMessages" class="messages-area">
-        <div v-for="i in 4" :key="i" class="msg-row" :class="i % 2 === 0 ? 'justify-end' : 'justify-start'">
-          <div class="skeleton rounded-2xl h-10" :class="i % 2 === 0 ? 'w-40' : 'w-52'"></div>
-        </div>
-      </div>
-
-      <div v-else class="messages-area scrollbar-hide" ref="messagesArea">
-        <div v-for="msg in messages" :key="msg.id" class="msg-row" :class="isMyMessage(msg) ? 'justify-end' : 'justify-start'">
-          <div class="msg-bubble" :class="isMyMessage(msg) ? 'msg-mine' : 'msg-theirs glass-panel'">
-            {{ msg.text || msg.message || msg.content }}
-          </div>
-        </div>
-      </div>
-
-      <div class="input-row">
-        <div class="flex-1 relative">
-          <input v-model="newMessage" @keyup.enter="sendMessage" type="text" placeholder="Ketik pesan..." class="msg-input glass-panel" />
-        </div>
-        <button @click="sendMessage" class="send-btn" :disabled="sending" aria-label="Send">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-    </div>
-
-  </div>
-</template>
-
-<script setup>
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
-import { useScrollReveal } from '@/composables/useScrollReveal'
-import { useAuth } from '@/composables/useAuth'
-import AuthGate from '@/components/AuthGate.vue'
-import api from '@/services/api'
-
-useScrollReveal()
-const { isLoggedIn, user } = useAuth()
-
-const activeChatId = ref(null)
-const activeChat   = ref(null)
-const newMessage   = ref('')
-const sending      = ref(false)
-const messagesArea = ref(null)
-
-// Chats list
-const chats        = ref([])
-const loadingChats = ref(false)
-const errorChats   = ref(null)
-
-const totalUnread = computed(() => chats.value.reduce((s, c) => s + (c.unread || 0), 0))
-
-async function fetchChats() {
-  if (!isLoggedIn.value) return
-  loadingChats.value = true
-  errorChats.value = null
-  try {
-    const data = await api.get('/chats')
-    chats.value = Array.isArray(data) ? data : []
-  } catch (e) {
-    errorChats.value = e.message || 'Gagal memuat daftar chat.'
-  } finally {
-    loadingChats.value = false
-  }
-}
-
-onMounted(fetchChats)
-
-// Messages
-const messages        = ref([])
-const loadingMessages = ref(false)
-
-async function fetchMessages(chatId) {
-  loadingMessages.value = true
-  try {
-    const data = await api.get(`/chats/${chatId}/messages`)
-    messages.value = Array.isArray(data) ? data : []
-    await nextTick()
-    if (messagesArea.value) messagesArea.value.scrollTop = messagesArea.value.scrollHeight
-  } catch (e) {
-    console.error('Gagal memuat pesan:', e.message)
-  } finally {
-    loadingMessages.value = false
-  }
-}
-
-async function openChat(chat) {
-  activeChatId.value = chat.id
-  activeChat.value = chat
-  // Reset unread badge locally
-  chat.unread = 0
-  // Sync with backend
-  try {
-    await api.patch(`/chats/${chat.id}/read`)
-  } catch (e) {
-    console.error('Gagal mark as read:', e.message)
-  }
-}
-
-watch(activeChatId, (id) => {
-  if (id) fetchMessages(id)
-  else messages.value = []
-})
-
-async function sendMessage() {
-  const text = newMessage.value.trim()
-  if (!text || !activeChatId.value || sending.value) return
-
-  // Optimistic append
-  const optimistic = { id: `temp-${Date.now()}`, text, mine: true, is_mine: true, sender_id: user.value?.id }
-  messages.value.push(optimistic)
-  newMessage.value = ''
-  sending.value = true
-  await nextTick()
-  if (messagesArea.value) messagesArea.value.scrollTop = messagesArea.value.scrollHeight
-
-  try {
-    const data = await api.post(`/chats/${activeChatId.value}/messages`, { text })
-    // Replace optimistic with real message
-    const idx = messages.value.findIndex(m => m.id === optimistic.id)
-    if (idx !== -1) messages.value[idx] = { ...data, mine: true, is_mine: true }
-  } catch (e) {
-    // Rollback
-    messages.value = messages.value.filter(m => m.id !== optimistic.id)
-    alert('Gagal mengirim pesan: ' + (e.message || ''))
-  } finally {
-    sending.value = false
-  }
-}
-
-function isMyMessage(msg) {
-  if (msg.mine === true || msg.is_mine === true) return true
-  return msg.sender_id && user.value?.id && msg.sender_id === user.value.id
-}
-</script>
-
-<style scoped>
-@reference "../assets/main.css";
-
-.chat-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-6; }
-.section-title-wrap { @apply flex items-center gap-3; }
-.section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
-.fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
-.page-title { @apply text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
-.unread-badge { @apply text-xs font-bold text-white rounded-md px-2 py-0.5 min-w-[22px] text-center; background: linear-gradient(135deg, #C1121F, #780000); font-family: 'Helvetica', sans-serif; box-shadow: 0 2px 8px -2px rgba(193,18,31,0.5); }
-
-.empty-state { @apply flex flex-col items-center justify-center text-center py-20; }
-.empty-icon { @apply w-20 h-20 rounded-full flex items-center justify-center mb-5; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
-.empty-title { @apply text-xl font-bold text-gray-900 mb-1; font-family: 'CalSans', serif; }
-.empty-sub { @apply text-sm text-black/50; }
-
-.chat-list { @apply flex flex-col gap-3; }
-.chat-item { @apply flex items-center gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 cursor-pointer; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.chat-item:hover { transform: translate(1.5px,1.5px); box-shadow: 2.5px 2.5px 0 0 #111; }
-.chat-avatar { @apply w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg; border: 2px solid #111; }
-.avatar-fashion { background: linear-gradient(135deg, #C1121F, #780000); }
-.avatar-sports  { background: linear-gradient(135deg, #669BBC, #003049); }
-.avatar-dark    { background: linear-gradient(135deg, #111111, #333333); }
-.chat-info { @apply flex-1 min-w-0; }
-.chat-info-top { @apply flex items-center justify-between gap-2 mb-0.5; }
-.chat-name { @apply font-bold text-sm text-gray-900 truncate; }
-.chat-time { @apply text-[10px] text-black/40 flex-shrink-0 uppercase tracking-wide font-bold; }
-.chat-preview { @apply text-xs text-black/50 truncate; }
-.chat-preview-unread { @apply text-black/80 font-semibold; }
-.chat-unread-pill { @apply min-w-[22px] h-[22px] px-1.5 rounded-md flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0; background: linear-gradient(135deg, #C1121F, #780000); }
-
-.active-chat { @apply flex flex-col; height: calc(100dvh - 12rem); }
-@media (min-width: 768px) { .active-chat { height: calc(100dvh - 8rem); } }
-.active-header { @apply flex items-center gap-3 mb-4 pb-4 border-b border-black/5; }
-.back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 hover:bg-black/5 hover:text-[#C1121F] transition-all duration-200 active:scale-90; }
-.active-avatar { @apply w-10 h-10 rounded-full flex items-center justify-center text-white font-bold; background: linear-gradient(135deg, #669BBC, #003049); border: 2px solid #111; }
-.active-meta { @apply flex flex-col; }
-.active-name { @apply font-bold text-sm text-gray-900; }
-.online-row { @apply flex items-center gap-1.5 mt-0.5; }
-.online-dot { @apply w-1.5 h-1.5 rounded-full bg-emerald-500; box-shadow: 0 0 6px rgba(16,185,129,0.6); }
-.online-text { @apply text-[11px] font-semibold text-emerald-600; }
-
-.messages-area { @apply flex-1 overflow-y-auto flex flex-col gap-3 pb-4 pr-1; }
-.msg-row { @apply flex; }
-.msg-bubble { @apply max-w-[75%] px-4 py-2.5 text-sm leading-snug transition-transform duration-200; }
-.msg-mine   { @apply text-white rounded-2xl rounded-br-md; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
-.msg-theirs { @apply text-gray-900 rounded-2xl rounded-bl-md; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
-
-.input-row { @apply flex gap-2 pt-3 border-t border-black/5; }
-.msg-input { @apply w-full h-12 pl-5 pr-4 rounded-xl text-sm focus:outline-none transition-colors duration-200; border: 2px solid #111; }
-.msg-input:focus { border-color: #C1121F; }
-.send-btn { @apply w-12 h-12 rounded-xl flex items-center justify-center text-white flex-shrink-0; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.send-btn:hover:not(:disabled) { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
-.send-btn:disabled { @apply opacity-60 cursor-not-allowed; }
-
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-.skeleton { @apply animate-pulse bg-black/10 rounded-xl; }
-.skeleton-line { height: 14px; @apply rounded-md; }
-.skeleton-line-sm { height: 12px; @apply rounded-md; }
-.error-banner { @apply flex flex-col items-center gap-3 py-10 text-center; }
-.error-text { @apply text-sm font-semibold text-[#C1121F]; }
-.retry-btn { @apply px-5 py-2 text-sm font-bold rounded-xl text-white; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
-</style>
-</file>
-
 <file path="src/views/NotificationView.vue">
 <template>
   <div class="notif-root">
@@ -6357,6 +6243,766 @@ function buyNow() {
 
 /* Error */
 .error-banner { @apply flex flex-col items-center gap-3 py-20 text-center; }
+.error-text { @apply text-sm font-semibold text-[#C1121F]; }
+.retry-btn { @apply px-5 py-2 text-sm font-bold rounded-xl text-white; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+</style>
+</file>
+
+<file path="src/views/ProfileView.vue">
+<template>
+  <div class="profile-root">
+
+    <!-- ══════════════ GUEST ══════════════ -->
+    <section v-if="!isLoggedIn" class="reveal mb-6">
+      <div class="hero-card">
+        <div class="hero-overlay"></div>
+        <div class="hero-deco-1"></div>
+        <div class="hero-deco-2"></div>
+        <div class="hero-avatar">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="hero-content">
+          <h2 class="hero-name">Guest</h2>
+          <p class="hero-loc">Belum login ke SecondSpace</p>
+          <router-link to="/login" class="hero-edit-btn">Login Sekarang</router-link>
+        </div>
+      </div>
+      <p class="guest-switch">Belum punya akun? <router-link to="/register" class="guest-switch-link">Daftar</router-link></p>
+    </section>
+
+    <!-- ══════════════ LOGGED IN ══════════════ -->
+    <section v-else class="reveal mb-6">
+      <div class="hero-card">
+        <div class="hero-overlay"></div>
+        <div class="hero-deco-1"></div>
+        <div class="hero-deco-2"></div>
+        <div class="hero-avatar">{{ (user?.name || 'U')[0].toUpperCase() }}</div>
+        <div class="hero-content">
+          <h2 class="hero-name">{{ user?.name || 'Pengguna' }}</h2>
+          <p class="hero-loc">{{ user?.city || 'Indonesia' }}</p>
+          <div class="hero-stats-pill">
+            <span class="hero-stat-text">⭐ {{ user?.rating || '5.0' }}</span>
+            <span class="hero-stat-divider"></span>
+            <span class="hero-stat-text">{{ user?.total_sold || 0 }} Terjual</span>
+            <span class="hero-stat-divider"></span>
+            <span class="hero-stat-text">{{ user?.total_purchased || 0 }} Dibeli</span>
+          </div>
+          <router-link to="/profile/edit" class="hero-edit-btn">Edit Profile</router-link>
+        </div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stats-grid">
+        <!-- Skeleton while stats loading -->
+        <template v-if="loadingStats">
+          <div v-for="i in 3" :key="i" class="stat-card glass-panel"><div class="skeleton h-6 w-10 mx-auto mb-1 rounded-md"></div><div class="skeleton h-3 w-16 mx-auto rounded-md"></div></div>
+        </template>
+        <template v-else>
+          <div v-for="stat in stats" :key="stat.label" class="stat-card glass-panel">
+            <p class="stat-value" :style="{ color: stat.color }">{{ stat.value }}</p>
+            <p class="stat-label">{{ stat.label }}</p>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <!-- ══════════════ MENU ══════════════ -->
+    <section v-if="isLoggedIn" class="menu-section">
+      <div v-for="(group, gi) in menuGroups" :key="group.title" class="reveal" :class="`reveal-delay-${(gi % 3) + 1}`">
+        <div class="menu-group-header">
+          <div class="section-accent fashion-accent"></div>
+          <p class="menu-group-title">{{ group.title }}</p>
+        </div>
+        <div class="menu-card glass-panel">
+          <router-link v-for="item in group.items" :key="item.label" :to="item.path" class="menu-item">
+            <div class="menu-icon" v-html="icons[item.icon]"></div>
+            <span class="menu-label">{{ item.label }}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="menu-chevron"><path d="m9 18 6-6-6-6"/></svg>
+          </router-link>
+        </div>
+      </div>
+
+      <button @click="handleLogout" class="logout-btn" :disabled="loggingOut">
+        {{ loggingOut ? 'Keluar...' : 'Keluar' }}
+      </button>
+    </section>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useScrollReveal } from '@/composables/useScrollReveal'
+import { useAuth } from '@/composables/useAuth'
+import api from '@/services/api'
+
+useScrollReveal()
+const router = useRouter()
+const { user, isLoggedIn, logout } = useAuth()
+
+const loggingOut  = ref(false)
+const loadingStats = ref(false)
+const stats = ref([
+  { label: 'Pembelian', value: 0, color: '#C1121F' },
+  { label: 'Penjualan', value: 0, color: '#780000' },
+  { label: 'Wishlist',  value: 0, color: '#669BBC' },
+])
+
+async function handleLogout() {
+  loggingOut.value = true
+  try { await logout() } finally { loggingOut.value = false }
+  router.push('/')
+}
+
+async function fetchStats() {
+  if (!isLoggedIn.value) return
+  loadingStats.value = true
+  try {
+    const data = await api.get('/users/me/stats')
+    stats.value = [
+      { label: 'Pembelian', value: data.purchases ?? data.total_purchased ?? user.value?.total_purchased ?? 0, color: '#C1121F' },
+      { label: 'Penjualan', value: data.sales    ?? data.total_sold     ?? user.value?.total_sold     ?? 0, color: '#780000' },
+      { label: 'Wishlist',  value: data.wishlist  ?? 0,                                                       color: '#669BBC' },
+    ]
+  } catch {
+    // Fail silently — stats are decorative
+  } finally {
+    loadingStats.value = false
+  }
+}
+
+onMounted(fetchStats)
+
+const wrap = (paths) =>
+  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`
+
+const icons = {
+  bag:     wrap('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
+  package: wrap('<path d="m7.5 4.27 9 5.15"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
+  tag:     wrap('<path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'),
+  inbox:   wrap('<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>'),
+  user:    wrap('<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
+  pin:     wrap('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'),
+  bell:    wrap('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'),
+  help:    wrap('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
+  doc:     wrap('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'),
+  heart:   wrap('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
+  store:   wrap('<path d="m3 7 2-4h14l2 4"/><path d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7"/><path d="M3 7h18"/><path d="M9 11v4"/><path d="M15 11v4"/>'),
+}
+
+const menuGroups = [
+  { title: 'Transaksi', items: [
+    { icon: 'bag',     label: 'Pesanan Saya',      path: '/cart' },
+    { icon: 'package', label: 'Riwayat Pembelian', path: '/profile/history' },
+    { icon: 'heart',   label: 'Wishlist Saya',     path: '/profile/wishlist' },
+    { icon: 'tag',     label: 'Jual Barang',       path: '/profile/sell' },
+    { icon: 'store',   label: 'Barang Saya',       path: '/profile/listings' },
+    { icon: 'inbox',   label: 'Pesanan Masuk',     path: '/profile/sales' },
+  ]},
+  { title: 'Akun', items: [
+    { icon: 'user', label: 'Edit Profil', path: '/profile/edit' },
+    { icon: 'pin',  label: 'Alamat Saya', path: '/profile/address' },
+    { icon: 'bell', label: 'Notifikasi',  path: '/notifications' },
+  ]},
+  { title: 'Lainnya', items: [
+    { icon: 'help', label: 'Bantuan',            path: '/profile/help' },
+    { icon: 'doc',  label: 'Syarat & Ketentuan', path: '/profile/terms' },
+  ]},
+]
+</script>
+
+<style scoped>
+@reference "../assets/main.css";
+
+.profile-root { @apply pb-8; padding: 1rem; }
+.hero-card { @apply relative overflow-hidden rounded-3xl p-6 sm:p-8 text-white flex flex-col items-center; background: linear-gradient(135deg, #003049, #669BBC); border: 2px solid #111; box-shadow: 6px 6px 0 0 #111; }
+.hero-overlay { @apply absolute inset-0 bg-white/5 pointer-events-none; }
+.hero-deco-1 { @apply absolute -top-12 -right-12 w-40 h-40 rounded-full pointer-events-none; background: rgba(255,255,255,0.08); }
+.hero-deco-2 { @apply absolute -bottom-16 -left-16 w-48 h-48 rounded-full pointer-events-none; background: rgba(255,255,255,0.06); }
+.hero-avatar { @apply w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mb-4 z-10; background: white; color: #003049; border: 3px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.hero-content { @apply z-10 flex flex-col items-center text-center; }
+.hero-name { @apply text-2xl font-bold mb-1; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
+.hero-loc { @apply text-sm text-white/80 mb-3 tracking-wide; }
+.hero-stats-pill { @apply flex items-center gap-2 sm:gap-3 mb-4 px-3 sm:px-4 py-1.5 rounded-lg border border-white/10 max-w-full; background: rgba(0,0,0,0.2); backdrop-filter: blur(8px); }
+.hero-stat-text { @apply text-[11px] sm:text-xs font-semibold whitespace-nowrap; }
+.hero-stat-divider { @apply w-px h-3; background: rgba(255,255,255,0.3); }
+.hero-edit-btn { @apply z-10 px-6 py-2 text-xs font-bold rounded-xl bg-white text-[#003049] no-underline; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.hero-edit-btn:hover { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
+.stats-grid { @apply grid grid-cols-3 gap-2 sm:gap-3 -mt-5 px-1 sm:px-2 relative z-20; }
+.stat-card { @apply rounded-2xl p-3 sm:p-4 text-center bg-white; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.stat-card:hover { transform: translate(1px,1px); box-shadow: 2px 2px 0 0 #111; }
+.stat-value { @apply text-lg sm:text-xl font-bold mb-1; font-family: 'CalSans', serif; }
+.stat-label { @apply text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-black/60; }
+.menu-section { @apply space-y-5; }
+.menu-group-header { @apply flex items-center gap-2 mb-2 pl-1; }
+.section-accent { @apply w-1 h-4 rounded-full flex-shrink-0; }
+.fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
+.menu-group-title { @apply text-[11px] font-bold uppercase tracking-widest text-black/50; }
+.menu-card { @apply rounded-2xl overflow-hidden divide-y divide-black; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.menu-item { @apply flex items-center gap-3 px-4 sm:px-5 py-3.5 sm:py-4 no-underline transition-all duration-200 hover:bg-white/60 active:scale-[0.99]; }
+.menu-icon { @apply w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0; background: rgba(193,18,31,0.1); color: #C1121F; border: 2px solid #111; }
+.menu-item:hover .menu-icon { background: rgba(193,18,31,0.14); }
+.menu-label { @apply text-sm font-bold flex-1 text-black/80; }
+.menu-chevron { @apply text-black/20 flex-shrink-0; }
+.guest-switch { @apply text-center text-sm text-black/60 mt-5; }
+.guest-switch-link { @apply font-bold text-[#C1121F] no-underline hover:underline; }
+.logout-btn { @apply w-full py-3.5 mt-2 text-sm font-bold rounded-xl text-[#C1121F] bg-white; border: 2px solid #111; box-shadow: 4px 4px 0 0 #C1121F; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease; }
+.logout-btn:hover:not(:disabled) { background: #C1121F; color: white; transform: translate(2px,2px); box-shadow: 2px 2px 0 0 #C1121F; }
+.logout-btn:disabled { @apply opacity-60 cursor-not-allowed; }
+.skeleton { @apply animate-pulse bg-black/10; }
+</style>
+</file>
+
+<file path="src/components/NavbarTop.vue">
+<template>
+  <nav class="navbar-top fixed top-0 w-full flex justify-center z-50 bg-[#FDF0D5]">
+    <div class="w-full max-w-5xl px-4 h-14 flex items-center justify-between gap-4">
+      <!-- Logo -->
+      <router-link to="/" class="flex-shrink-0">
+        <img src="@/assets/Img/logo.svg" alt="SecondSpace" class="h-8" />
+      </router-link>
+
+      <!-- Search Bar -->
+      <div class="flex-1 max-w-xl">
+        <div class="relative">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search Bar"
+            class="search-input"
+            @keyup.enter="handleSearch"
+          />
+          <button class="search-btn" @click="handleSearch" aria-label="Search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Icons -->
+      <div class="flex items-center gap-3 ml-2">
+        <router-link to="/catalog" class="nav-icon-btn" aria-label="Catalog">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </router-link>
+
+        <template v-if="isLoggedIn">
+          <router-link to="/cart" class="nav-icon-btn relative">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <span v-if="cartCount > 0" class="absolute -top-1 -right-1 bg-[#C1121F] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{{ cartCount }}</span>
+          </router-link>
+
+          <router-link to="/chat" class="nav-icon-btn relative">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span v-if="chatCount > 0" class="absolute -top-1 -right-1 bg-[#C1121F] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{{ chatCount }}</span>
+          </router-link>
+
+          <router-link to="/notifications" class="nav-icon-btn relative">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span v-if="notifCount > 0" class="absolute -top-1 -right-1 bg-[#C1121F] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{{ notifCount }}</span>
+          </router-link>
+
+          <router-link to="/profile" class="nav-icon-btn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </router-link>
+        </template>
+
+        <template v-else>
+          <router-link to="/login" class="nav-text-btn">Login</router-link>
+          <router-link to="/register" class="nav-cta-btn">Register</router-link>
+        </template>
+      </div>
+    </div>
+  </nav>
+  <!-- Spacer -->
+  <div class="h-14"></div>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import { useNotifications } from '@/composables/useNotifications'
+import { useChats } from '@/composables/useChats'
+import api from '@/services/api'
+
+const router = useRouter()
+const { isLoggedIn } = useAuth()
+const { unreadCount, fetchNotifications } = useNotifications()
+const { totalUnread: chatUnread, fetchChats } = useChats()
+const searchQuery = ref('')
+const cartCount = ref(0)
+
+async function fetchCounts() {
+  if (!isLoggedIn.value) {
+    cartCount.value = 0
+    return
+  }
+  try {
+    const cartData = await api.get('/cart')
+    const list = Array.isArray(cartData) ? cartData : []
+    cartCount.value = list.reduce((s, i) => s + (i.qty || 1), 0)
+    await fetchChats()
+    await fetchNotifications()
+  } catch {
+    // silent
+  }
+}
+
+watch(isLoggedIn, fetchCounts, { immediate: true })
+
+const chatCount = chatUnread
+const notifCount = unreadCount
+
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({ path: '/catalog', query: { q: searchQuery.value } })
+  }
+}
+</script>
+
+<style scoped>
+
+@reference "../assets/main.css";
+
+.nav-icon-btn {
+  @apply p-1.5 rounded-lg hover:bg-black/5 transition-all duration-200 text-black/70 hover:text-black cursor-pointer flex items-center justify-center;
+}
+
+/* Brutalist search bar */
+.search-input {
+  @apply w-full h-9 pl-4 pr-10 rounded-xl bg-white text-sm font-body outline-none;
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.search-input::placeholder {
+  @apply text-black/40;
+}
+.search-input:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 0 #111;
+}
+.search-input:focus {
+  border-color: #C1121F;
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
+}
+.search-btn {
+  @apply absolute right-2.5 top-1/2 -translate-y-1/2 text-black/60 hover:text-[#C1121F] transition-colors cursor-pointer;
+}
+.search-input:focus ~ .search-btn {
+  @apply text-[#C1121F];
+}
+
+/* Auth buttons (logged-out state) */
+.nav-text-btn {
+  @apply px-3 py-1.5 text-sm font-bold rounded-xl text-black/80 hover:text-[#C1121F] transition-colors;
+}
+.nav-cta-btn {
+  @apply px-3.5 py-1.5 text-sm font-bold rounded-xl bg-[#C1121F] text-white border-2 border-black;
+  box-shadow: 3px 3px 0 0 #111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.nav-cta-btn:hover {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0 0 #111;
+}
+</style>
+</file>
+
+<file path="src/router/index.js">
+import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '@/views/HomeView.vue'
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: HomeView,
+    },
+    {
+      path: '/catalog',
+      name: 'catalog',
+      component: () => import('@/views/CatalogView.vue'),
+    },
+    {
+      path: '/product/:id',
+      name: 'product-detail',
+      component: () => import('@/views/ProductDetailView.vue'),
+    },
+    {
+      path: '/cart',
+      name: 'cart',
+      component: () => import('@/views/CartView.vue'),
+    },
+    {
+      path: '/transaction',
+      name: 'transaction',
+      component: () => import('@/views/TransactionView.vue'),
+    },
+    {
+      path: '/chat',
+      name: 'chat',
+      component: () => import('@/views/ChatView.vue'),
+    },
+    {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/NotificationView.vue'),
+    },
+    {
+      path: '/notifications/:id',
+      name: 'notification-detail',
+      component: () => import('@/views/NotificationDetailView.vue'),
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('@/views/ProfileView.vue'),
+    },
+    {
+      path: '/profile/history',
+      name: 'profile-history',
+      component: () => import('@/views/PurchaseHistoryView.vue'),
+    },
+    {
+      path: '/profile/history/:id/review',
+      name: 'profile-review',
+      component: () => import('@/views/ReviewView.vue'),
+    },
+    {
+      path: '/profile/wishlist',
+      name: 'profile-wishlist',
+      component: () => import('@/views/WishlistView.vue'),
+    },
+    {
+      path: '/profile/sell',
+      name: 'profile-sell',
+      component: () => import('@/views/SellItemView.vue'),
+    },
+    {
+      path: '/profile/listings',
+      name: 'profile-listings',
+      component: () => import('@/views/MyListingsView.vue'),
+    },
+    {
+      path: '/profile/sales',
+      name: 'profile-sales',
+      component: () => import('@/views/SalesView.vue'),
+    },
+    {
+      path: '/profile/edit',
+      name: 'profile-edit',
+      component: () => import('@/views/EditProfileView.vue'),
+    },
+    {
+      path: '/profile/address',
+      name: 'profile-address',
+      component: () => import('@/views/AddressView.vue'),
+    },
+    {
+      path: '/profile/help',
+      name: 'profile-help',
+      component: () => import('@/views/HelpView.vue'),
+    },
+    {
+      path: '/profile/terms',
+      name: 'profile-terms',
+      component: () => import('@/views/TermsView.vue'),
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/LoginView.vue'),
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('@/views/RegisterView.vue'),
+    },
+  ],
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    return { top: 0, behavior: 'smooth' }
+  }
+})
+
+export default router
+</file>
+
+<file path="src/views/ChatView.vue">
+<template>
+  <div class="chat-root">
+
+    <AuthGate v-if="!isLoggedIn" title="Login untuk Chat" message="Masuk dulu untuk chat dengan seller dan tanya barang." />
+
+    <!-- Chat List -->
+    <div v-else-if="!activeChatId">
+      <section class="section-gap">
+        <div class="section-title-wrap">
+          <div class="section-accent fashion-accent"></div>
+          <h1 class="page-title">Chat <span v-if="totalUnread > 0" class="unread-badge">{{ totalUnread }}</span></h1>
+        </div>
+      </section>
+
+      <!-- Loading skeleton -->
+      <div v-if="loadingChats" class="chat-list">
+        <div v-for="i in 3" :key="i" class="chat-item glass-panel">
+          <div class="skeleton w-12 h-12 rounded-full flex-shrink-0"></div>
+          <div class="flex-1 flex flex-col gap-2">
+            <div class="skeleton skeleton-line w-1/2"></div>
+            <div class="skeleton skeleton-line-sm w-3/4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="errorChats" class="error-banner">
+        <p class="error-text">{{ errorChats }}</p>
+        <button @click="fetchChats" class="retry-btn">Coba Lagi</button>
+      </div>
+
+      <!-- Empty -->
+      <div v-else-if="chats.length === 0" class="empty-state reveal">
+        <div class="empty-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <p class="empty-title">Belum Ada Percakapan</p>
+        <p class="empty-sub">Mulai chat dengan penjual untuk tanya barang.</p>
+      </div>
+
+      <!-- Chat cards -->
+      <div v-else class="chat-list">
+        <div v-for="(chat, idx) in chats" :key="chat.id" @click="openChat(chat)" class="chat-item glass-panel reveal" :class="`reveal-delay-${(idx % 4) + 1}`">
+          <div class="chat-avatar" :class="chat.gradient || 'avatar-fashion'">{{ (chat.name || chat.other_user?.name || '?')[0].toUpperCase() }}</div>
+          <div class="chat-info">
+            <div class="chat-info-top">
+              <p class="chat-name">{{ chat.name || chat.other_user?.name || 'Pengguna' }}</p>
+              <span class="chat-time">{{ chat.time || chat.last_message_at || '' }}</span>
+            </div>
+            <p class="chat-preview" :class="chat.unread ? 'chat-preview-unread' : ''">{{ chat.lastMessage || chat.last_message || '' }}</p>
+          </div>
+          <div v-if="chat.unread" class="chat-unread-pill">{{ chat.unread }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Chat -->
+    <div v-else class="active-chat">
+      <div class="active-header">
+        <button @click="activeChatId = null" class="back-btn" aria-label="Back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div class="active-avatar">{{ (activeChat?.name || activeChat?.other_user?.name || '?')[0].toUpperCase() }}</div>
+        <div class="active-meta">
+          <p class="active-name">{{ activeChat?.name || activeChat?.other_user?.name || 'Pengguna' }}</p>
+          <div class="online-row"><span class="online-dot"></span><span class="online-text">Online</span></div>
+        </div>
+      </div>
+
+      <!-- Loading messages -->
+      <div v-if="loadingMessages" class="messages-area">
+        <div v-for="i in 4" :key="i" class="msg-row" :class="i % 2 === 0 ? 'justify-end' : 'justify-start'">
+          <div class="skeleton rounded-2xl h-10" :class="i % 2 === 0 ? 'w-40' : 'w-52'"></div>
+        </div>
+      </div>
+
+      <div v-else class="messages-area scrollbar-hide" ref="messagesArea">
+        <div v-for="msg in messages" :key="msg.id" class="msg-row" :class="isMyMessage(msg) ? 'justify-end' : 'justify-start'">
+          <div class="msg-bubble" :class="isMyMessage(msg) ? 'msg-mine' : 'msg-theirs glass-panel'">
+            {{ msg.text || msg.message || msg.content }}
+          </div>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="flex-1 relative">
+          <input v-model="newMessage" @keyup.enter="sendMessage" type="text" placeholder="Ketik pesan..." class="msg-input glass-panel" />
+        </div>
+        <button @click="sendMessage" class="send-btn" :disabled="sending" aria-label="Send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { useScrollReveal } from '@/composables/useScrollReveal'
+import { useAuth } from '@/composables/useAuth'
+import { useChats } from '@/composables/useChats'
+import AuthGate from '@/components/AuthGate.vue'
+import api from '@/services/api'
+
+useScrollReveal()
+const { isLoggedIn, user } = useAuth()
+const { chats, totalUnread, fetchChats, markChatRead } = useChats()
+
+const activeChatId = ref(null)
+const activeChat   = ref(null)
+const newMessage   = ref('')
+const sending      = ref(false)
+const messagesArea = ref(null)
+const loadingChats = ref(false)
+const errorChats   = ref(null)
+
+async function loadChats() {
+  if (!isLoggedIn.value) return
+  loadingChats.value = true
+  errorChats.value = null
+  try {
+    await fetchChats()
+  } catch (e) {
+    errorChats.value = e.message || 'Gagal memuat daftar chat.'
+  } finally {
+    loadingChats.value = false
+  }
+}
+
+onMounted(loadChats)
+
+const messages        = ref([])
+const loadingMessages = ref(false)
+
+async function fetchMessages(chatId) {
+  loadingMessages.value = true
+  try {
+    const data = await api.get(`/chats/${chatId}/messages`)
+    messages.value = Array.isArray(data) ? data : []
+    await nextTick()
+    if (messagesArea.value) messagesArea.value.scrollTop = messagesArea.value.scrollHeight
+  } catch (e) {
+    console.error('Gagal memuat pesan:', e.message)
+  } finally {
+    loadingMessages.value = false
+  }
+}
+
+async function openChat(chat) {
+  activeChatId.value = chat.id
+  activeChat.value = chat
+  // Decrement unread count immediately + sync with backend
+  if (chat.unread > 0) {
+    await markChatRead(chat.id)
+  }
+}
+
+watch(activeChatId, (id) => {
+  if (id) fetchMessages(id)
+  else messages.value = []
+})
+
+async function sendMessage() {
+  const text = newMessage.value.trim()
+  if (!text || !activeChatId.value || sending.value) return
+
+  const optimistic = { id: `temp-${Date.now()}`, text, mine: true, is_mine: true, sender_id: user.value?.id }
+  messages.value.push(optimistic)
+  newMessage.value = ''
+  sending.value = true
+  await nextTick()
+  if (messagesArea.value) messagesArea.value.scrollTop = messagesArea.value.scrollHeight
+
+  try {
+    const data = await api.post(`/chats/${activeChatId.value}/messages`, { text })
+    const idx = messages.value.findIndex(m => m.id === optimistic.id)
+    if (idx !== -1) messages.value[idx] = { ...data, mine: true, is_mine: true }
+  } catch (e) {
+    messages.value = messages.value.filter(m => m.id !== optimistic.id)
+    alert('Gagal mengirim pesan: ' + (e.message || ''))
+  } finally {
+    sending.value = false
+  }
+}
+
+function isMyMessage(msg) {
+  if (msg.mine === true || msg.is_mine === true) return true
+  return msg.sender_id && user.value?.id && msg.sender_id === user.value.id
+}
+</script>
+
+<style scoped>
+@reference "../assets/main.css";
+
+.chat-root { @apply pb-8; padding: 1rem; }
+.section-gap { @apply mb-6; }
+.section-title-wrap { @apply flex items-center gap-3; }
+.section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
+.fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
+.page-title { @apply text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
+.unread-badge { @apply text-xs font-bold text-white rounded-md px-2 py-0.5 min-w-[22px] text-center; background: linear-gradient(135deg, #C1121F, #780000); font-family: 'Helvetica', sans-serif; box-shadow: 0 2px 8px -2px rgba(193,18,31,0.5); }
+
+.empty-state { @apply flex flex-col items-center justify-center text-center py-20; }
+.empty-icon { @apply w-20 h-20 rounded-full flex items-center justify-center mb-5; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.empty-title { @apply text-xl font-bold text-gray-900 mb-1; font-family: 'CalSans', serif; }
+.empty-sub { @apply text-sm text-black/50; }
+
+.chat-list { @apply flex flex-col gap-3; }
+.chat-item { @apply flex items-center gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 cursor-pointer; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.chat-item:hover { transform: translate(1.5px,1.5px); box-shadow: 2.5px 2.5px 0 0 #111; }
+.chat-avatar { @apply w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg; border: 2px solid #111; }
+.avatar-fashion { background: linear-gradient(135deg, #C1121F, #780000); }
+.avatar-sports  { background: linear-gradient(135deg, #669BBC, #003049); }
+.avatar-dark    { background: linear-gradient(135deg, #111111, #333333); }
+.chat-info { @apply flex-1 min-w-0; }
+.chat-info-top { @apply flex items-center justify-between gap-2 mb-0.5; }
+.chat-name { @apply font-bold text-sm text-gray-900 truncate; }
+.chat-time { @apply text-[10px] text-black/40 flex-shrink-0 uppercase tracking-wide font-bold; }
+.chat-preview { @apply text-xs text-black/50 truncate; }
+.chat-preview-unread { @apply text-black/80 font-semibold; }
+.chat-unread-pill { @apply min-w-[22px] h-[22px] px-1.5 rounded-md flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0; background: linear-gradient(135deg, #C1121F, #780000); }
+
+.active-chat { @apply flex flex-col; height: calc(100dvh - 12rem); }
+@media (min-width: 768px) { .active-chat { height: calc(100dvh - 8rem); } }
+.active-header { @apply flex items-center gap-3 mb-4 pb-4 border-b border-black/5; }
+.back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 hover:bg-black/5 hover:text-[#C1121F] transition-all duration-200 active:scale-90; }
+.active-avatar { @apply w-10 h-10 rounded-full flex items-center justify-center text-white font-bold; background: linear-gradient(135deg, #669BBC, #003049); border: 2px solid #111; }
+.active-meta { @apply flex flex-col; }
+.active-name { @apply font-bold text-sm text-gray-900; }
+.online-row { @apply flex items-center gap-1.5 mt-0.5; }
+.online-dot { @apply w-1.5 h-1.5 rounded-full bg-emerald-500; box-shadow: 0 0 6px rgba(16,185,129,0.6); }
+.online-text { @apply text-[11px] font-semibold text-emerald-600; }
+
+.messages-area { @apply flex-1 overflow-y-auto flex flex-col gap-3 pb-4 pr-1; }
+.msg-row { @apply flex; }
+.msg-bubble { @apply max-w-[75%] px-4 py-2.5 text-sm leading-snug transition-transform duration-200; }
+.msg-mine   { @apply text-white rounded-2xl rounded-br-md; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+.msg-theirs { @apply text-gray-900 rounded-2xl rounded-bl-md; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+
+.input-row { @apply flex gap-2 pt-3 border-t border-black/5; }
+.msg-input { @apply w-full h-12 pl-5 pr-4 rounded-xl text-sm focus:outline-none transition-colors duration-200; border: 2px solid #111; }
+.msg-input:focus { border-color: #C1121F; }
+.send-btn { @apply w-12 h-12 rounded-xl flex items-center justify-center text-white flex-shrink-0; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.send-btn:hover:not(:disabled) { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
+.send-btn:disabled { @apply opacity-60 cursor-not-allowed; }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+.skeleton { @apply animate-pulse bg-black/10 rounded-xl; }
+.skeleton-line { height: 14px; @apply rounded-md; }
+.skeleton-line-sm { height: 12px; @apply rounded-md; }
+.error-banner { @apply flex flex-col items-center gap-3 py-10 text-center; }
 .error-text { @apply text-sm font-semibold text-[#C1121F]; }
 .retry-btn { @apply px-5 py-2 text-sm font-bold rounded-xl text-white; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
 </style>

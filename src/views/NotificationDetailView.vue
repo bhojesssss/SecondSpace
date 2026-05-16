@@ -182,10 +182,11 @@ const shortId = (id) => {
 /* ── Root ───────────────────────────────────────────────────────────────────── */
 .detail-root {
   @apply pb-8;
-  padding: 1rem;
+  padding: 0.75rem;
 }
+@media (min-width: 640px) { .detail-root { padding: 1rem; } }
 .section-gap {
-  @apply mb-6;
+  @apply mb-5 sm:mb-6;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────────── */
@@ -205,13 +206,13 @@ const shortId = (id) => {
   box-shadow: 1px 1px 0 0 #111;
 }
 .section-accent {
-  @apply w-1 h-7 rounded-full flex-shrink-0;
+  @apply w-1 h-6 sm:h-7 rounded-full flex-shrink-0;
 }
 .fashion-accent {
   background: linear-gradient(135deg, #C1121F, #780000);
 }
 .page-title {
-  @apply text-2xl font-bold tracking-tight text-gray-900;
+  @apply text-xl sm:text-2xl font-bold tracking-tight text-gray-900;
   font-family: 'CalSans', serif;
 }
 

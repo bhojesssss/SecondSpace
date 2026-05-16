@@ -184,19 +184,22 @@ async function setDefault(id) {
 <style scoped>
 @reference "../assets/main.css";
 
-.addr-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-6; }
-.header-wrap { @apply flex items-center gap-3; }
+.addr-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .addr-root { padding: 1rem; } }
+.section-gap { @apply mb-5 sm:mb-6; }
+.header-wrap { @apply flex items-center gap-2 sm:gap-3 flex-wrap; }
 .back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 bg-white transition-all duration-200 active:scale-90; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; }
 .back-btn:hover { color: #C1121F; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
 .section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
 .fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
-.page-title { @apply text-2xl font-bold tracking-tight text-gray-900 flex-1; font-family: 'CalSans', serif; }
-.add-btn { @apply px-4 py-2 text-xs font-bold rounded-xl text-white; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.page-title { @apply text-xl sm:text-2xl font-bold tracking-tight text-gray-900 flex-1; font-family: 'CalSans', serif; }
+.add-btn { @apply px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold rounded-xl text-white whitespace-nowrap; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+@media (min-width: 640px) { .add-btn { box-shadow: 3px 3px 0 0 #111; } }
 .add-btn:hover { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
 
-.addr-list { @apply flex flex-col gap-4; }
-.addr-card { @apply rounded-2xl p-4 sm:p-5; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.addr-list { @apply flex flex-col gap-3 sm:gap-4; }
+.addr-card { @apply rounded-2xl p-3.5 sm:p-5; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+@media (min-width: 640px) { .addr-card { box-shadow: 4px 4px 0 0 #111; } }
 .card-main { @apply mb-3; }
 .label-row { @apply flex items-center gap-2 mb-1; }
 .addr-label { @apply text-sm font-bold text-gray-900; font-family: 'CalSans', serif; }
@@ -220,9 +223,10 @@ async function setDefault(id) {
 
 /* Modal */
 .modal-backdrop { @apply fixed inset-0 flex items-end sm:items-center justify-center z-50 p-3 sm:p-6; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
-.modal-card { @apply w-full max-w-md rounded-3xl p-5 sm:p-7 bg-white; border: 2px solid #111; box-shadow: 8px 8px 0 0 #C1121F; }
+.modal-card { @apply w-full max-w-md rounded-3xl p-4 sm:p-7 bg-white; border: 2px solid #111; box-shadow: 5px 5px 0 0 #C1121F; }
+@media (min-width: 640px) { .modal-card { box-shadow: 8px 8px 0 0 #C1121F; } }
 .modal-header { @apply flex items-center justify-between mb-5; }
-.modal-title { @apply text-xl font-bold text-gray-900; font-family: 'CalSans', serif; }
+.modal-title { @apply text-lg sm:text-xl font-bold text-gray-900; font-family: 'CalSans', serif; }
 .modal-close { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/60 hover:bg-black/5 hover:text-[#C1121F] transition-colors duration-200; }
 .modal-form { @apply flex flex-col gap-4; }
 .field { @apply flex flex-col; }

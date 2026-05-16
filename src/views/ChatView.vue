@@ -193,10 +193,11 @@ function isMyMessage(msg) {
 <style scoped>
 @reference "../assets/main.css";
 
-.chat-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-6; }
+.chat-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .chat-root { padding: 1rem; } }
+.section-gap { @apply mb-5 sm:mb-6; }
 .section-title-wrap { @apply flex items-center gap-3; }
-.section-accent { @apply w-1 h-7 rounded-full flex-shrink-0; }
+.section-accent { @apply w-1 h-6 sm:h-7 rounded-full flex-shrink-0; }
 .fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
 .page-title { @apply text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
 .unread-badge { @apply text-xs font-bold text-white rounded-md px-2 py-0.5 min-w-[22px] text-center; background: linear-gradient(135deg, #C1121F, #780000); font-family: 'Helvetica', sans-serif; box-shadow: 0 2px 8px -2px rgba(193,18,31,0.5); }
@@ -206,24 +207,25 @@ function isMyMessage(msg) {
 .empty-title { @apply text-xl font-bold text-gray-900 mb-1; font-family: 'CalSans', serif; }
 .empty-sub { @apply text-sm text-black/50; }
 
-.chat-list { @apply flex flex-col gap-3; }
-.chat-item { @apply flex items-center gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 cursor-pointer; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.chat-item:hover { transform: translate(1.5px,1.5px); box-shadow: 2.5px 2.5px 0 0 #111; }
-.chat-avatar { @apply w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg; border: 2px solid #111; }
+.chat-list { @apply flex flex-col gap-2.5 sm:gap-3; }
+.chat-item { @apply flex items-center gap-3 sm:gap-4 rounded-2xl p-2.5 sm:p-4 cursor-pointer; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+@media (min-width: 640px) { .chat-item { box-shadow: 4px 4px 0 0 #111; } }
+.chat-item:hover { transform: translate(1.5px,1.5px); box-shadow: 2px 2px 0 0 #111; }
+.chat-avatar { @apply w-11 h-11 sm:w-12 sm:h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-base sm:text-lg; border: 2px solid #111; }
 .avatar-fashion { background: linear-gradient(135deg, #C1121F, #780000); }
 .avatar-sports  { background: linear-gradient(135deg, #669BBC, #003049); }
 .avatar-dark    { background: linear-gradient(135deg, #111111, #333333); }
 .chat-info { @apply flex-1 min-w-0; }
 .chat-info-top { @apply flex items-center justify-between gap-2 mb-0.5; }
 .chat-name { @apply font-bold text-sm text-gray-900 truncate; }
-.chat-time { @apply text-[10px] text-black/40 flex-shrink-0 uppercase tracking-wide font-bold; }
+.chat-time { @apply text-[9px] sm:text-[10px] text-black/40 flex-shrink-0 uppercase tracking-wide font-bold whitespace-nowrap; }
 .chat-preview { @apply text-xs text-black/50 truncate; }
 .chat-preview-unread { @apply text-black/80 font-semibold; }
 .chat-unread-pill { @apply min-w-[22px] h-[22px] px-1.5 rounded-md flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0; background: linear-gradient(135deg, #C1121F, #780000); }
 
 .active-chat { @apply flex flex-col; height: calc(100dvh - 12rem); }
 @media (min-width: 768px) { .active-chat { height: calc(100dvh - 8rem); } }
-.active-header { @apply flex items-center gap-3 mb-4 pb-4 border-b border-black/5; }
+.active-header { @apply flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-black/5; }
 .back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 hover:bg-black/5 hover:text-[#C1121F] transition-all duration-200 active:scale-90; }
 .active-avatar { @apply w-10 h-10 rounded-full flex items-center justify-center text-white font-bold; background: linear-gradient(135deg, #669BBC, #003049); border: 2px solid #111; }
 .active-meta { @apply flex flex-col; }
@@ -238,10 +240,11 @@ function isMyMessage(msg) {
 .msg-mine   { @apply text-white rounded-2xl rounded-br-md; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
 .msg-theirs { @apply text-gray-900 rounded-2xl rounded-bl-md; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
 
-.input-row { @apply flex gap-2 pt-3 border-t border-black/5; }
-.msg-input { @apply w-full h-12 pl-5 pr-4 rounded-xl text-sm focus:outline-none transition-colors duration-200; border: 2px solid #111; }
+.input-row { @apply flex gap-2 pt-2 sm:pt-3 border-t border-black/5; }
+.msg-input { @apply w-full h-11 sm:h-12 pl-4 sm:pl-5 pr-4 rounded-xl text-sm focus:outline-none transition-colors duration-200; border: 2px solid #111; }
 .msg-input:focus { border-color: #C1121F; }
-.send-btn { @apply w-12 h-12 rounded-xl flex items-center justify-center text-white flex-shrink-0; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.send-btn { @apply w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white flex-shrink-0; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+@media (min-width: 640px) { .send-btn { box-shadow: 3px 3px 0 0 #111; } }
 .send-btn:hover:not(:disabled) { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
 .send-btn:disabled { @apply opacity-60 cursor-not-allowed; }
 

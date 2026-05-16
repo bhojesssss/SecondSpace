@@ -303,8 +303,9 @@ async function submitShip(id) {
 <style scoped>
 @reference "../assets/main.css";
 
-.sales-root { @apply pb-8; padding: 1rem; }
-.section-gap { @apply mb-6; }
+.sales-root { @apply pb-8; padding: 0.75rem; }
+@media (min-width: 640px) { .sales-root { padding: 1rem; } }
+.section-gap { @apply mb-5 sm:mb-6; }
 .header-wrap { @apply flex items-center gap-3; }
 .back-btn { @apply w-9 h-9 rounded-lg flex items-center justify-center text-black/70 bg-white transition-all duration-200; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; }
 .back-btn:hover { color: #C1121F; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
@@ -325,8 +326,9 @@ async function submitShip(id) {
 .count-off { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.6); }
 
 /* Order cards */
-.orders-list { @apply flex flex-col gap-4; }
-.order-card { @apply rounded-2xl p-4 sm:p-5; border: 2px solid #111; box-shadow: 4px 4px 0 0 #111; }
+.orders-list { @apply flex flex-col gap-3 sm:gap-4; }
+.order-card { @apply rounded-2xl p-3.5 sm:p-5; border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
+@media (min-width: 640px) { .order-card { box-shadow: 4px 4px 0 0 #111; } }
 .order-header { @apply flex items-center justify-between mb-3; }
 .order-id { @apply text-xs font-bold text-black/50 uppercase tracking-wider; }
 .order-status { @apply text-[11px] font-bold px-3 py-1 rounded-md uppercase tracking-wider; }

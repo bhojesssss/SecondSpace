@@ -2,7 +2,7 @@
   <div class="app-wrapper min-h-screen bg-[#FDF0D5] flex flex-col items-center w-full relative">
     <NavbarTop v-if="!isMobile && !isAuthPage" />
 
-    <main class="flex-1 w-full max-w-5xl px-4 pt-4 md:pt-0 pb-6 flex flex-col">
+    <main class="flex-1 w-full max-w-5xl px-3 sm:px-4 pt-3 sm:pt-4 md:pt-0 pb-6 flex flex-col">
       <router-view v-slot="{ Component, route }">
         <transition name="page" mode="out-in">
           <component :is="Component" :key="route.fullPath" />
