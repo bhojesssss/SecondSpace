@@ -1,26 +1,31 @@
 <template>
   <router-link :to="`/product/${product.id}`" class="product-card group block">
-    <div class="card-frame" style="aspect-ratio: 1;">
+    <div class="card-frame" style="aspect-ratio: 1">
       <img
         :src="product.img"
         :alt="product.name"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
       />
       <!-- Wishlist button -->
-      <button
-        @click.prevent="toggleWishlist"
-        class="wishlist-btn"
-        aria-label="Wishlist"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" :fill="isWishlisted ? 'white' : 'none'" stroke="white" stroke-width="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      <button @click.prevent="toggleWishlist" class="wishlist-btn" aria-label="Wishlist">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          :fill="isWishlisted ? 'white' : 'none'"
+          stroke="white"
+          stroke-width="2"
+        >
+          <path
+            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+          />
         </svg>
       </button>
     </div>
     <!-- Info -->
     <div class="card-info">
       <div class="flex items-center justify-between gap-2">
-        <span class="card-price">Rp {{ formatPrice(product.price) }}</span>
+        <span class="card-price">{{ formatRupiah(product.price) }}</span>
         <span class="card-size">{{ product.size }}</span>
       </div>
       <p class="card-name">{{ product.name }}</p>
@@ -34,7 +39,7 @@ import { ref } from 'vue'
 import api from '@/services/api'
 
 const props = defineProps({
-  product: { type: Object, required: true }
+  product: { type: Object, required: true },
 })
 
 const isWishlisted = ref(false)
@@ -59,22 +64,25 @@ const toggleWishlist = async () => {
   }
 }
 
-const formatPrice = (price) => (price || 0).toLocaleString('id-ID')
+import { formatRupiah } from '@/utils/currency'
 </script>
 
 <style scoped>
-
 @reference "../assets/main.css";
 
 .product-card {
   @apply cursor-pointer block;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .card-frame {
   @apply rounded-xl overflow-hidden bg-[#C1121F] relative;
   border: 2px solid #111;
   box-shadow: 3px 3px 0 0 #111;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .product-card:hover .card-frame {
   transform: translate(1.5px, 1.5px);
