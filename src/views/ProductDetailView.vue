@@ -87,11 +87,20 @@
           {{ product.rating || '4.8' }} ({{ product.review_count || 0 }} ulasan)
         </p>
 
-        <div class="opt-block">
+        <div v-if="isSoldOut" class="sold-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          Barang ini sudah habis terjual
+        </div>
+        <p v-else class="stock-info">
+          <span class="stock-label">Stok tersisa:</span>
+          <span class="stock-value">{{ product.stock }}</span>
+        </p>
+
+        <div v-if="availableSizes.length" class="opt-block">
           <p class="opt-label">Size</p>
           <div class="opt-row">
             <button
-              v-for="size in ['S', 'M', 'L', 'XL', 'XXL']"
+              v-for="size in availableSizes"
               :key="size"
               @click="selectedSize = size"
               class="size-btn"
@@ -105,15 +114,7 @@
         <div class="opt-block">
           <p class="opt-label">Condition</p>
           <div class="opt-row">
-            <button
-              v-for="cond in ['Like New', 'Good', 'Fair']"
-              :key="cond"
-              @click="selectedCondition = cond"
-              class="cond-btn"
-              :class="selectedCondition === cond ? 'cond-active' : 'cond-inactive glass-panel'"
-            >
-              {{ cond }}
-            </button>
+            <span class="cond-tag">{{ product.condition || 'Like New' }}</span>
           </div>
         </div>
 
@@ -123,22 +124,27 @@
         </div>
 
         <div class="seller-card glass-panel">
-          <div class="seller-avatar">{{ (product.seller_name || 'S')[0].toUpperCase() }}</div>
+          <div class="seller-avatar">
+            <img v-if="product.seller_avatar" :src="product.seller_avatar" :alt="sellerName" class="w-full h-full object-cover" />
+            <span v-else>{{ sellerInitial }}</span>
+          </div>
           <div class="seller-info">
-            <p class="seller-name">{{ product.seller_name || 'SecondSeller' }}</p>
+            <p class="seller-name">{{ sellerName }}</p>
             <p class="seller-meta">
               {{ product.seller_location || 'Indonesia' }} <span class="meta-dot">·</span> ⭐
-              {{ product.seller_rating || '4.9' }}
+              {{ product.seller_rating || '5.0' }}
             </p>
           </div>
           <button @click="startChatWithSeller" class="seller-chat-btn">Chat</button>
         </div>
 
         <div class="cta-row">
-          <button @click="handleAddToCart" class="cta-secondary" :disabled="addingToCart">
-            {{ addingToCart ? 'Menambahkan...' : '+ Keranjang' }}
+          <button @click="handleAddToCart" class="cta-secondary" :disabled="addingToCart || isSoldOut">
+            {{ isSoldOut ? 'Habis' : (addingToCart ? 'Menambahkan...' : '+ Keranjang') }}
           </button>
-          <button @click="buyNow" class="cta-primary">Beli Sekarang</button>
+          <button @click="buyNow" class="cta-primary" :disabled="isSoldOut">
+            {{ isSoldOut ? 'Sold Out' : 'Beli Sekarang' }}
+          </button>
         </div>
         <p v-if="cartMsg" class="cart-msg">{{ cartMsg }}</p>
       </div>
@@ -164,8 +170,7 @@ const { setItems } = useTransaction()
 const { addToCart: addItemToCart } = useCart()
 
 const isWishlisted = ref(false)
-const selectedSize = ref('M')
-const selectedCondition = ref('Like New')
+const selectedSize = ref('')
 const activeThumb = ref(0)
 const addingToCart = ref(false)
 const cartMsg = ref('')
@@ -177,11 +182,16 @@ const product = ref({
   category: '',
   img: '',
   sold: 0,
-  size: 'M',
+  size: '',
+  sizes: [],
+  stock: 0,
+  condition: '',
+  is_available: true,
   description: '',
   images: [],
   seller_id: null,
   seller_name: '',
+  seller_avatar: '',
   seller_location: '',
   seller_rating: '',
   rating: '',
@@ -193,6 +203,22 @@ const productImages = computed(() =>
     ? product.value.images
     : [product.value.img].filter(Boolean),
 )
+
+const availableSizes = computed(() => {
+  const arr = Array.isArray(product.value.sizes) ? product.value.sizes.filter(Boolean) : []
+  if (arr.length) return arr
+  return product.value.size ? [product.value.size] : []
+})
+
+const isSoldOut = computed(() => {
+  const stockNum = Number(product.value.stock)
+  if (Number.isFinite(stockNum) && stockNum <= 0) return true
+  if (product.value.is_available === false) return true
+  return false
+})
+
+const sellerName = computed(() => product.value.seller_name?.trim() || 'Penjual')
+const sellerInitial = computed(() => sellerName.value[0]?.toUpperCase() || 'S')
 
 const loading = ref(false)
 const error = ref(null)
@@ -209,24 +235,31 @@ async function fetchProduct() {
   try {
     const data = await api.get(`/products/${route.params.id}`)
     const imgs = Array.isArray(data.images) ? data.images : []
+    const sizesArr = Array.isArray(data.sizes) ? data.sizes.filter(Boolean) : []
+    const sellerProfile = data.profiles || data.seller || {}
     product.value = {
       id: data.id,
       name: data.name,
       price: data.price,
-      category: data.category || data.category_name || '',
+      category: data.category || data.category_name || data.categories?.name || '',
       img: imgs[0] || data.img || data.image_url || '',
       images: imgs,
       sold: data.sold || data.sold_count || 0,
-      size: data.size || 'M',
+      size: data.size || '',
+      sizes: sizesArr.length ? sizesArr : (data.size ? [data.size] : []),
+      stock: Number.isFinite(data.stock) ? data.stock : 0,
+      condition: data.condition || '',
+      is_available: data.is_available !== false,
       description: data.description || '',
-      seller_id: data.seller_id || data.seller?.id || data.profiles?.id || null,
-      seller_name: data.seller?.name || data.seller_name || 'SecondSeller',
-      seller_location: data.seller?.location || data.seller_location || 'Indonesia',
-      seller_rating: data.seller?.rating || data.seller_rating || '4.9',
+      seller_id: data.seller_id || sellerProfile.id || null,
+      seller_name: sellerProfile.name || data.seller_name || '',
+      seller_avatar: sellerProfile.avatar_url || data.seller_avatar || '',
+      seller_location: sellerProfile.city || sellerProfile.location || data.seller_location || 'Indonesia',
+      seller_rating: sellerProfile.rating || data.seller_rating || '5.0',
       rating: data.rating || '4.8',
       review_count: data.review_count || 0,
     }
-    selectedSize.value = data.size || 'M'
+    selectedSize.value = product.value.sizes[0] || product.value.size || ''
   } catch (e) {
     error.value = e.message || 'Gagal memuat detail produk.'
   } finally {
@@ -241,6 +274,7 @@ async function handleAddToCart() {
     router.push('/login')
     return
   }
+  if (isSoldOut.value) return
 
   addingToCart.value = true
   cartMsg.value = ''
@@ -253,7 +287,7 @@ async function handleAddToCart() {
       price: product.value.price,
       img: product.value.img,
       size: selectedSize.value,
-      condition: selectedCondition.value,
+      condition: product.value.condition,
       qty: 1,
     }
 
@@ -262,7 +296,7 @@ async function handleAddToCart() {
     await api.post('/cart', {
       product_id: product.value.id,
       size: selectedSize.value,
-      condition: selectedCondition.value,
+      condition: product.value.condition,
       qty: 1,
     })
 
@@ -299,6 +333,7 @@ function buyNow() {
     router.push('/login')
     return
   }
+  if (isSoldOut.value) return
   setItems(
     [
       {
@@ -307,7 +342,7 @@ function buyNow() {
         price: product.value.price,
         img: product.value.img,
         size: selectedSize.value,
-        condition: selectedCondition.value,
+        condition: product.value.condition,
         qty: 1,
       },
     ],
@@ -471,6 +506,30 @@ function buyNow() {
   box-shadow: 2px 2px 0 0 #111;
   transform: translate(-1px, -1px);
 }
+.cond-tag {
+  @apply inline-flex items-center px-4 py-2 text-xs font-bold rounded-xl text-white;
+  background: linear-gradient(135deg, #c1121f, #780000);
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+  letter-spacing: 0.02em;
+}
+.sold-banner {
+  @apply flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white mb-5;
+  background: linear-gradient(135deg, #111111, #333333);
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+}
+.stock-info {
+  @apply flex items-center gap-2 mb-5 text-xs;
+}
+.stock-label {
+  @apply font-bold uppercase tracking-widest text-black/55;
+}
+.stock-value {
+  @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-sm font-bold text-white;
+  background: linear-gradient(135deg, #c1121f, #780000);
+  font-family: 'CalSans', serif;
+}
 .desc-text {
   @apply text-sm text-black/60 leading-relaxed;
 }
@@ -485,7 +544,7 @@ function buyNow() {
   }
 }
 .seller-avatar {
-  @apply w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0;
+  @apply w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0 overflow-hidden;
   background: linear-gradient(135deg, #669bbc, #003049);
   border: 2px solid #111;
 }
@@ -559,9 +618,13 @@ function buyNow() {
     box-shadow: 4px 4px 0 0 #111;
   }
 }
-.cta-primary:hover {
+.cta-primary:hover:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 0 #111;
+}
+.cta-primary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+  filter: grayscale(0.6);
 }
 .cart-msg {
   @apply text-center text-xs font-semibold text-emerald-600 mt-3;

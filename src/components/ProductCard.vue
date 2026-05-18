@@ -1,13 +1,16 @@
 <template>
-  <router-link :to="`/product/${product.id}`" class="product-card group block">
+  <router-link :to="`/product/${product.id}`" class="product-card group block" :class="{ 'is-sold': isSoldOut }">
     <div class="card-frame" style="aspect-ratio: 1">
       <img
         :src="product.img"
         :alt="product.name"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
       />
+      <div v-if="isSoldOut" class="sold-overlay">
+        <span class="sold-stamp">SOLD</span>
+      </div>
       <!-- Wishlist button -->
-      <button @click.prevent="toggleWishlist" class="wishlist-btn" aria-label="Wishlist">
+      <button v-if="!isSoldOut" @click.prevent="toggleWishlist" class="wishlist-btn" aria-label="Wishlist">
         <svg
           width="14"
           height="14"
@@ -26,16 +29,16 @@
     <div class="card-info">
       <div class="flex items-center justify-between gap-2">
         <span class="card-price">{{ formatRupiah(product.price) }}</span>
-        <span class="card-size">{{ product.size }}</span>
+        <span class="card-size">{{ sizeLabel }}</span>
       </div>
       <p class="card-name">{{ product.name }}</p>
-      <p class="card-sold">Terjual {{ product.sold }}</p>
+      <p class="card-sold">{{ isSoldOut ? 'Habis terjual' : `Terjual ${product.sold || 0}` }}</p>
     </div>
   </router-link>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import api from '@/services/api'
 
 const props = defineProps({
@@ -44,6 +47,22 @@ const props = defineProps({
 
 const isWishlisted = ref(false)
 const toggling = ref(false)
+
+const isSoldOut = computed(() => {
+  const p = props.product
+  const stockNum = Number(p.stock)
+  if (Number.isFinite(stockNum) && stockNum <= 0) return true
+  if (p.is_available === false) return true
+  return false
+})
+
+const sizeLabel = computed(() => {
+  const p = props.product
+  if (Array.isArray(p.sizes) && p.sizes.length) {
+    return p.sizes.length > 1 ? `${p.sizes[0]} +${p.sizes.length - 1}` : p.sizes[0]
+  }
+  return p.size || '-'
+})
 
 const toggleWishlist = async () => {
   if (toggling.value || !props.product.id) return
@@ -110,5 +129,45 @@ import { formatRupiah } from '@/utils/currency'
 }
 .card-sold {
   @apply text-[11px] sm:text-xs text-black/45 mt-1;
+}
+
+/* Sold-out state */
+.product-card.is-sold .card-frame img {
+  filter: grayscale(1) brightness(0.7);
+}
+.product-card.is-sold .card-frame {
+  background: #9a9a9a;
+  box-shadow: 3px 3px 0 0 #555;
+}
+.product-card.is-sold:hover .card-frame {
+  transform: none;
+  box-shadow: 3px 3px 0 0 #555;
+}
+.product-card.is-sold .card-price {
+  @apply text-black/45 line-through;
+}
+.product-card.is-sold .card-name,
+.product-card.is-sold .card-size {
+  @apply text-black/35;
+}
+.product-card.is-sold .card-sold {
+  @apply font-bold text-black/55;
+}
+
+.sold-overlay {
+  @apply absolute inset-0 flex items-center justify-center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(1px);
+  pointer-events: none;
+}
+.sold-stamp {
+  @apply text-white font-bold text-2xl sm:text-3xl uppercase tracking-widest;
+  font-family: 'CalSans', serif;
+  border: 3px solid white;
+  padding: 0.35rem 1.1rem;
+  transform: rotate(-12deg);
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.5);
+  background: rgba(193, 18, 31, 0.85);
+  letter-spacing: 0.15em;
 }
 </style>

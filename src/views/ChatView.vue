@@ -217,10 +217,20 @@ const messages = ref([])
 const loadingMessages = ref(false)
 
 async function fetchMessages(chatId) {
-  loadingMessages.value = true
+  // Cuma show loading skeleton kalo BELUM ada message (initial load)
+  if (messages.value.length === 0) loadingMessages.value = true
   try {
     const data = await api.get(`/chats/${chatId}/messages`)
-    messages.value = Array.isArray(data) ? data : []
+    const newMessages = Array.isArray(data) ? data : []
+
+    // Cek apakah ada perubahan — kalo sama, ga usah update
+    const lastLocalId = messages.value[messages.value.length - 1]?.id
+    const lastFreshId = newMessages[newMessages.length - 1]?.id
+    if (lastLocalId === lastFreshId && messages.value.length === newMessages.length) {
+      return // Skip update, ga ada yang baru
+    }
+
+    messages.value = newMessages
     await nextTick()
     if (messagesArea.value) messagesArea.value.scrollTop = messagesArea.value.scrollHeight
   } catch (e) {
