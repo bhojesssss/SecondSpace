@@ -93,7 +93,8 @@ const menus = [
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 72px;
+  height: calc(72px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
   background: #f6ecd2;
   border-top: 1px solid #d9ccb0;
 

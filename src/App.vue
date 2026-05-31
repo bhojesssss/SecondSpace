@@ -1,8 +1,11 @@
 <template>
-  <div class="app-wrapper min-h-screen bg-[#FDF0D5] flex flex-col items-center w-full relative">
+  <div class="app-wrapper min-h-dvh bg-[#FDF0D5] flex flex-col items-center w-full relative">
     <NavbarTop v-if="!isMobile && !isAuthPage" />
 
-    <main class="flex-1 w-full max-w-5xl px-3 sm:px-4 pt-3 sm:pt-4 md:pt-0 pb-6 flex flex-col">
+    <main
+      class="flex-1 w-full max-w-5xl px-3 sm:px-4 pt-3 sm:pt-4 md:pt-0 pb-6 flex flex-col"
+      :class="{ 'has-bottom-nav': isMobile && !isAuthPage }"
+    >
       <router-view v-slot="{ Component, route }">
         <transition name="page" mode="out-in">
           <component :is="Component" :key="route.fullPath" />
@@ -11,7 +14,6 @@
     </main>
 
     <NavbarBottom v-if="isMobile && !isAuthPage" />
-    <div v-if="isMobile && !isAuthPage" class="pb-20"></div>
   </div>
 </template>
 
@@ -39,3 +41,13 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
 })
 </script>
+
+<style scoped>
+/* The bottom navbar is fixed (NavbarBottom). On mobile, reserve its height as
+   real padding on <main> so page content — e.g. the Profile "Keluar" button —
+   is never hidden behind it. Includes the iOS home-indicator safe area plus a
+   little breathing room. Keep this in sync with NavbarBottom's height. */
+.has-bottom-nav {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom) + 1.25rem);
+}
+</style>
