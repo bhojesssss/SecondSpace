@@ -73,10 +73,20 @@
             </div>
           </div>
           <div class="field">
-            <label class="field-label">Ukuran</label>
+            <label class="field-label">Ukuran Tersedia <span class="label-hint">(pilih satu atau lebih)</span></label>
             <div class="seg-row">
-              <button v-for="s in sizes" :key="s" type="button" @click="form.size = s" class="seg-btn seg-narrow" :class="form.size === s ? 'seg-active' : 'seg-inactive'">{{ s }}</button>
+              <button v-for="s in sizes" :key="s" type="button" @click="toggleSize(s)" class="seg-btn seg-narrow" :class="form.sizes.includes(s) ? 'seg-active' : 'seg-inactive'">{{ s }}</button>
             </div>
+            <p v-if="form.sizes.length === 0" class="hint hint-warn">Pilih minimal satu ukuran.</p>
+          </div>
+          <div class="field">
+            <label class="field-label">Stok</label>
+            <div class="stock-input-wrap">
+              <button type="button" @click="adjustStock(-1)" class="stock-btn" :disabled="form.stock <= 1">−</button>
+              <input v-model.number="form.stock" type="number" min="1" required class="field-input stock-input" />
+              <button type="button" @click="adjustStock(1)" class="stock-btn">+</button>
+            </div>
+            <p class="hint">Jumlah barang yang kamu punya untuk dijual.</p>
           </div>
         </section>
 
@@ -146,9 +156,20 @@ const categoryIdMap = {
 }
 
 const form = reactive({
-  name: '', category: 'Fashion', subcategory: '', condition: 'Like New', size: 'M',
+  name: '', category: 'Fashion', subcategory: '', condition: 'Like New',
+  sizes: [], stock: 1,
   price: null, description: '',
 })
+
+const toggleSize = (s) => {
+  const i = form.sizes.indexOf(s)
+  if (i >= 0) form.sizes.splice(i, 1)
+  else form.sizes.push(s)
+}
+const adjustStock = (delta) => {
+  const next = (Number(form.stock) || 0) + delta
+  form.stock = Math.max(1, next)
+}
 
 const activeSubcategories = computed(() => form.category === 'Sports' ? sportsSubcats : fashionSubcats)
 const setCategory = (c) => { if (form.category === c) return; form.category = c; form.subcategory = '' }
@@ -189,7 +210,10 @@ async function loadProduct() {
     form.description = data.description || ''
     form.price       = data.price ?? null
     form.condition   = data.condition || 'Like New'
-    form.size        = data.size || 'M'
+    form.sizes       = Array.isArray(data.sizes) && data.sizes.length
+      ? [...data.sizes]
+      : (data.size ? [data.size] : [])
+    form.stock       = Number.isFinite(data.stock) ? data.stock : 1
     const cat = categoryFromId(data.category_id)
     if (cat) {
       form.category    = cat.category
@@ -211,6 +235,8 @@ onMounted(loadProduct)
 
 async function handleSubmit() {
   if (!form.subcategory) { submitError.value = 'Pilih subkategori terlebih dahulu.'; return }
+  if (!form.sizes.length) { submitError.value = 'Pilih minimal satu ukuran yang tersedia.'; return }
+  if (!form.stock || form.stock < 1) { submitError.value = 'Stok minimal 1.'; return }
   const hasAnyImage = imageFiles.value.some(Boolean) || imagePreviews.value.some(Boolean)
   if (!hasAnyImage) { submitError.value = 'Tambahkan minimal satu foto.'; return }
 
@@ -235,7 +261,9 @@ async function handleSubmit() {
       price:       form.price,
       category_id: categoryIdMap[form.subcategory] || 1,
       condition:   form.condition,
-      size:        form.size,
+      size:        form.sizes[0],
+      sizes:       form.sizes,
+      stock:       form.stock,
       images:      imageUrls,
     }
 
@@ -312,6 +340,17 @@ async function handleSubmit() {
 .price-input { @apply pl-11; }
 .price-input::-webkit-outer-spin-button,.price-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .price-input { -moz-appearance: textfield; }
+
+.label-hint { @apply normal-case tracking-normal text-[10px] font-medium text-black/40 ml-1; }
+.hint-warn { color: #C1121F; font-weight: 600; }
+
+.stock-input-wrap { @apply flex items-center gap-2; }
+.stock-btn { @apply w-11 h-11 sm:h-12 rounded-xl text-lg font-bold bg-white text-black/80 flex-shrink-0; border: 2px solid #111; box-shadow: 2px 2px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease; }
+.stock-btn:hover:not(:disabled) { background: #FDF0D5; transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+.stock-btn:disabled { @apply opacity-40 cursor-not-allowed; }
+.stock-input { @apply text-center font-bold; max-width: 100px; }
+.stock-input::-webkit-outer-spin-button,.stock-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.stock-input { -moz-appearance: textfield; }
 
 .submit-btn { @apply w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 text-white text-sm font-bold rounded-xl transition-all duration-150; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; }
 @media (min-width: 640px) { .submit-btn { box-shadow: 4px 4px 0 0 #111; } }

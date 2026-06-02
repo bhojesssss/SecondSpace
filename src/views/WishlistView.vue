@@ -80,6 +80,9 @@ const mapItem = (w) => {
       sold: p.sold_count || 0,
       sold_count: p.sold_count || 0,
       size: p.size || '',
+      sizes: Array.isArray(p.sizes) ? p.sizes : (p.size ? [p.size] : []),
+      stock: Number.isFinite(p.stock) ? p.stock : (p.stock != null ? Number(p.stock) : null),
+      is_available: p.is_available !== false,
       category: p.categories?.name || '',
     }
   }

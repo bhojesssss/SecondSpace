@@ -55,9 +55,10 @@ onUnmounted(() => {
   padding-bottom: 1.5rem;
 }
 
-/* Mobile: reserve room for the fixed bottom navbar (72px) + breathing space
-   so page content (e.g. the Profile logout button) is never hidden under it. */
+/* Mobile: reserve room for the fixed bottom navbar (72px) + the iOS home-indicator
+   safe area + breathing space so page content (e.g. the Profile logout button) is
+   never hidden behind it. Keep the 72px in sync with NavbarBottom's height. */
 .page-main.has-bottom-nav {
-  padding-bottom: calc(72px + 1.25rem);
+  padding-bottom: calc(72px + env(safe-area-inset-bottom) + 1.25rem);
 }
 </style>
