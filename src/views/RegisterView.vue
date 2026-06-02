@@ -1,12 +1,30 @@
 <template>
   <div class="auth-root">
-    <div class="auth-frame">
-      <router-link to="/" class="brand-link">
-        <img src="@/assets/Img/logo.svg" class="brand-logo" alt="SecondSpace" />
-      </router-link>
+    <div class="auth-split">
+      <!-- Brand panel — desktop split screen -->
+      <aside class="brand-panel">
+        <span class="brand-blob brand-blob-1"></span>
+        <span class="brand-blob brand-blob-2"></span>
+        <div class="brand-content">
+          <img src="@/assets/Img/logo.svg" class="brand-panel-logo" alt="SecondSpace" />
+          <h2 class="brand-headline">Gabung SecondSpace.</h2>
+          <p class="brand-tagline">Bikin akun dan mulai jual-beli fashion &amp; sport preloved dengan mudah dan aman.</p>
+          <ul class="brand-features">
+            <li class="brand-feature"><span class="brand-feature-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Pasang barang gratis dalam menit</span></li>
+            <li class="brand-feature"><span class="brand-feature-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Jangkau ribuan pembeli preloved</span></li>
+            <li class="brand-feature"><span class="brand-feature-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Transaksi aman &amp; terverifikasi</span></li>
+          </ul>
+        </div>
+      </aside>
 
-      <div class="auth-card">
-        <div class="corner-block"></div>
+      <!-- Form panel -->
+      <div class="form-panel">
+        <router-link to="/" class="brand-link">
+          <img src="@/assets/Img/logo.svg" class="brand-logo" alt="SecondSpace" />
+        </router-link>
+
+        <div class="auth-card">
+          <div class="corner-block"></div>
 
         <h1 class="auth-title">Join SecondSpace</h1>
         <p class="auth-subtitle">Bikin akun untuk mulai jual &amp; beli preloved.</p>
@@ -65,6 +83,7 @@
           Sudah punya akun?
           <router-link to="/login" class="switch-link">Masuk</router-link>
         </p>
+        </div>
       </div>
     </div>
   </div>
@@ -112,11 +131,44 @@ async function handleRegister() {
 @reference "../assets/main.css";
 
 .auth-root { @apply flex flex-col items-center justify-center w-full py-6 sm:py-8; min-height: calc(100dvh - 4rem); }
-.auth-frame { @apply w-full max-w-md flex flex-col items-center px-1; }
+.auth-split { @apply w-full max-w-md; }
+.form-panel { @apply w-full flex flex-col items-center px-1; }
+.brand-panel { @apply hidden; }
 .brand-link { @apply mb-5 sm:mb-6 transition-transform duration-200 hover:scale-105; }
 .brand-logo { @apply h-9 sm:h-10; }
-.auth-card { @apply relative w-full p-4 sm:p-7 rounded-2xl bg-white; border: 2px solid #111; box-shadow: 5px 5px 0 0 #C1121F; }
-@media (min-width: 640px) { .auth-card { box-shadow: 8px 8px 0 0 #C1121F; } }
+.auth-card { @apply relative w-full p-4 sm:p-7 rounded-2xl bg-white; border: 2px solid #111; box-shadow: 5px 5px 0 0 #111; }
+@media (min-width: 640px) { .auth-card { box-shadow: 8px 8px 0 0 #111; } }
+
+/* ── Desktop split screen ───────────────────────────────── */
+.brand-content { @apply relative z-10 flex flex-col; }
+.brand-panel-logo { @apply h-10 mb-8 self-start; filter: brightness(0) invert(1); }
+.brand-headline { @apply text-3xl lg:text-4xl font-bold leading-tight mb-4; font-family: 'CalSans', serif; letter-spacing: -0.02em; }
+.brand-tagline { @apply text-sm text-white/85 leading-relaxed mb-8 max-w-xs; }
+.brand-features { @apply flex flex-col gap-3.5 list-none p-0 m-0; }
+.brand-feature { @apply flex items-center gap-3 text-sm font-semibold text-white/95; }
+.brand-feature-icon { @apply w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-white; background: rgba(255,255,255,0.16); border: 1.5px solid rgba(255,255,255,0.4); }
+.brand-blob { @apply absolute rounded-full pointer-events-none; }
+.brand-blob-1 { width: 240px; height: 240px; top: -70px; right: -70px; background: rgba(255,255,255,0.1); }
+.brand-blob-2 { width: 180px; height: 180px; bottom: -60px; left: -50px; background: rgba(0,0,0,0.12); }
+
+@media (min-width: 768px) {
+  .auth-root { @apply py-8; }
+  .auth-split {
+    @apply max-w-4xl flex items-stretch rounded-2xl overflow-hidden bg-white;
+    border: 2px solid #111;
+    box-shadow: 10px 10px 0 0 #111;
+  }
+  .brand-panel {
+    @apply relative flex flex-col justify-center p-10 lg:p-12 text-white overflow-hidden;
+    flex: 0 0 44%;
+    background: linear-gradient(135deg, #C1121F, #780000);
+    border-right: 2px solid #111;
+  }
+  .form-panel { @apply flex-1 justify-center px-10 lg:px-14 py-12; max-width: none; }
+  .brand-link { display: none; }
+  .auth-card { @apply max-w-sm p-0 rounded-none bg-transparent; border: none; box-shadow: none; }
+  .corner-block { display: none; }
+}
 .corner-block { @apply absolute -top-2 -right-2 sm:-top-3 sm:-right-3 w-8 h-8 sm:w-10 sm:h-10 rounded-md; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; }
 .auth-title { @apply text-xl sm:text-3xl font-bold mb-1 text-gray-900; font-family: 'CalSans', serif; letter-spacing: -0.02em; }
 .auth-subtitle { @apply text-xs sm:text-sm text-black/60 mb-4; }

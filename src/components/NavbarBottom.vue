@@ -1,32 +1,50 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { Home, Grid2x2, ShoppingBag, MessageSquare, User } from 'lucide-vue-next'
 
-import { useCart } from '@/composables/useCart'
 import { useChats } from '@/composables/useChats'
+import { useAuth } from '@/composables/useAuth'
+import api from '@/services/api'
 
 const route = useRoute()
 
-const { cartCount } = useCart()
-
+const { isLoggedIn } = useAuth()
 const { totalUnread, fetchChats } = useChats()
 
-let chatInterval = null
+// Cart count comes from the server cart (same source as NavbarTop / CartView),
+// not the localStorage composable — otherwise the badge would always read 0.
+const cartCount = ref(0)
 
-onMounted(async () => {
+async function fetchCounts() {
+  if (!isLoggedIn.value) {
+    cartCount.value = 0
+    return
+  }
+  try {
+    const cartData = await api.get('/cart')
+    const list = Array.isArray(cartData) ? cartData : []
+    cartCount.value = list.reduce((s, i) => s + (i.qty || 1), 0)
+  } catch {
+    // silent
+  }
   await fetchChats()
+}
 
-  chatInterval = setInterval(async () => {
-    await fetchChats()
-  }, 5000)
+let pollInterval = null
+
+onMounted(() => {
+  fetchCounts()
+  pollInterval = setInterval(fetchCounts, 5000)
 })
 
 onUnmounted(() => {
-  if (chatInterval) {
-    clearInterval(chatInterval)
+  if (pollInterval) {
+    clearInterval(pollInterval)
   }
 })
+
+watch(isLoggedIn, fetchCounts)
 
 const menus = [
   {

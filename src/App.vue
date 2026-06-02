@@ -1,8 +1,11 @@
 <template>
-  <div class="app-wrapper min-h-screen bg-[#FDF0D5] flex flex-col items-center w-full relative">
+  <div class="app-wrapper bg-[#FDF0D5] flex flex-col items-center w-full relative">
     <NavbarTop v-if="!isMobile && !isAuthPage" />
 
-    <main class="flex-1 w-full max-w-5xl px-3 sm:px-4 pt-3 sm:pt-4 md:pt-0 pb-6 flex flex-col">
+    <main
+      class="page-main flex-1 w-full max-w-5xl px-3 sm:px-4 pt-3 sm:pt-4 md:pt-0 flex flex-col"
+      :class="{ 'has-bottom-nav': isMobile && !isAuthPage }"
+    >
       <router-view v-slot="{ Component, route }">
         <transition name="page" mode="out-in">
           <component :is="Component" :key="route.fullPath" />
@@ -11,7 +14,6 @@
     </main>
 
     <NavbarBottom v-if="isMobile && !isAuthPage" />
-    <div v-if="isMobile && !isAuthPage" class="pb-20"></div>
   </div>
 </template>
 
@@ -39,3 +41,23 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
 })
 </script>
+
+<style scoped>
+/* Use dynamic viewport height so the layout matches the visible area on mobile
+   (100vh is taller than the visible viewport when the address bar is shown,
+   which let the fixed bottom navbar overlap page content). */
+.app-wrapper {
+  min-height: 100dvh;
+}
+
+/* Desktop default bottom padding (was pb-6). */
+.page-main {
+  padding-bottom: 1.5rem;
+}
+
+/* Mobile: reserve room for the fixed bottom navbar (72px) + breathing space
+   so page content (e.g. the Profile logout button) is never hidden under it. */
+.page-main.has-bottom-nav {
+  padding-bottom: calc(72px + 1.25rem);
+}
+</style>

@@ -7,7 +7,7 @@
         <div class="section-accent fashion-accent"></div>
         <h1 class="page-title">Catalog</h1>
       </div>
-      <div class="md:hidden relative mb-5">
+      <div class="md:hidden relative search-wrap">
         <input v-model="searchQuery" type="text" placeholder="Search products..." class="search-input" />
         <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
@@ -227,6 +227,7 @@ async function fetchProducts() {
 .page-title { @apply text-2xl font-bold tracking-tight text-gray-900; font-family: 'CalSans', serif; letter-spacing: -0.01em; }
 .section-title { @apply text-base font-extrabold tracking-tight text-gray-900; letter-spacing: -0.01em; }
 
+.search-wrap { margin-bottom: 1rem; }
 .search-input { @apply w-full h-11 pl-5 pr-11 rounded-xl text-sm focus:outline-none transition-colors duration-200; background-color: rgba(255,255,255,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 2px solid #111; }
 .search-input:focus { border-color: #C1121F; }
 .search-icon { @apply absolute right-4 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none; }

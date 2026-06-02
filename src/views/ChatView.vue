@@ -217,16 +217,29 @@ const messages = ref([])
 const loadingMessages = ref(false)
 
 async function fetchMessages(chatId) {
-  loadingMessages.value = true
+  // Only show loading skeleton on initial fetch (when messages are empty)
+  const isInitialLoad = messages.value.length === 0
+  if (isInitialLoad) loadingMessages.value = true
+
   try {
     const data = await api.get(`/chats/${chatId}/messages`)
-    messages.value = Array.isArray(data) ? data : []
+    const newMessages = Array.isArray(data) ? data : []
+
+    // Skip update if nothing changed (avoid re-render flicker)
+    const lastLocalId = messages.value[messages.value.length - 1]?.id
+    const lastFreshId = newMessages[newMessages.length - 1]?.id
+    const sameLength = messages.value.length === newMessages.length
+    if (sameLength && lastLocalId === lastFreshId) {
+      return
+    }
+
+    messages.value = newMessages
     await nextTick()
     if (messagesArea.value) messagesArea.value.scrollTop = messagesArea.value.scrollHeight
   } catch (e) {
     console.error('Gagal memuat pesan:', e.message)
   } finally {
-    loadingMessages.value = false
+    if (isInitialLoad) loadingMessages.value = false
   }
 }
 
@@ -400,7 +413,7 @@ function isMyMessage(msg) {
 
 .active-chat {
   @apply flex flex-col;
-  height: calc(100dvh - 12rem);
+  height: calc(100dvh - 11rem);
 }
 @media (min-width: 768px) {
   .active-chat {
@@ -458,6 +471,19 @@ function isMyMessage(msg) {
 
 .input-row {
   @apply flex gap-2 pt-2 sm:pt-3 border-t border-black/5;
+}
+/* Mobile: dock the chat bar just above the fixed bottom navbar (72px tall) */
+@media (max-width: 767px) {
+  .input-row {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 72px;
+    z-index: 40;
+    padding: 0.6rem 1.25rem;
+    background: #fdf0d5;
+    border-top: 1px solid rgba(17, 17, 17, 0.08);
+  }
 }
 .msg-input {
   @apply w-full h-11 sm:h-12 pl-4 sm:pl-5 pr-4 rounded-xl text-sm focus:outline-none transition-colors duration-200;

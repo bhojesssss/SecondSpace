@@ -16,6 +16,10 @@
           </button>
           <div class="section-accent fashion-accent"></div>
           <h1 class="page-title">Barang Saya</h1>
+          <router-link to="/profile/sell" class="add-btn" aria-label="Tambah barang">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span class="add-btn-label">Tambah</span>
+          </router-link>
         </div>
         <p class="page-sub">Kelola, edit, dan pantau progres barang yang kamu jual.</p>
       </section>
@@ -313,6 +317,9 @@ onMounted(fetchListings)
 .fashion-accent { background: linear-gradient(135deg, #C1121F, #780000); }
 .page-title { @apply text-2xl font-bold tracking-tight text-gray-900; font-family: 'CalSans', serif; }
 .page-sub { @apply text-sm text-black/55 mt-2 ml-12; }
+.add-btn { @apply inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white no-underline flex-shrink-0; margin-left: auto; background: linear-gradient(135deg, #C1121F, #780000); border: 2px solid #111; box-shadow: 3px 3px 0 0 #111; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.add-btn:hover { transform: translate(1.5px,1.5px); box-shadow: 1.5px 1.5px 0 0 #111; }
+.add-btn:active { transform: translate(3px,3px); box-shadow: 0 0 0 0 #111; }
 
 /* Filter tabs */
 .filter-track { @apply flex gap-2.5 overflow-x-auto pb-2; }
