@@ -13,18 +13,37 @@
       </router-view>
     </main>
 
+    <AppFooter v-if="!isMobile && !isAuthPage" />
+
     <NavbarBottom v-if="isMobile && !isAuthPage" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import NavbarTop from '@/components/NavbarTop.vue'
 import NavbarBottom from '@/components/NavbarBottom.vue'
+import AppFooter from '@/components/AppFooter.vue'
+import { useAuth } from '@/composables/useAuth'
+import { usePresence } from '@/composables/usePresence'
 
 const route = useRoute()
 const isAuthPage = computed(() => ['login', 'register'].includes(route.name))
+
+// ── Realtime presence ─────────────────────────────────────────────────────────
+// Broadcast "online" for the whole session (any page), so chat can show real-time
+// online/offline status of the other user.
+const { user } = useAuth()
+const { startPresence, stopPresence } = usePresence()
+watch(
+  () => user.value?.id,
+  (id) => {
+    if (id) startPresence(id)
+    else stopPresence()
+  },
+  { immediate: true },
+)
 
 const isMobile = ref(window.innerWidth < 768)
 
@@ -39,6 +58,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
+  stopPresence()
 })
 </script>
 

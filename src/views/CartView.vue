@@ -61,11 +61,40 @@
       <!-- Content -->
       <div v-else class="cart-layout">
         <div class="cart-items">
+          <!-- Select all bar -->
+          <div class="select-all-bar glass-panel reveal">
+            <button
+              @click="allSelected = !allSelected"
+              class="checkbox"
+              :class="{ 'checkbox-on': allSelected }"
+              role="checkbox"
+              :aria-checked="allSelected"
+              aria-label="Pilih semua"
+            >
+              <svg
+                v-if="allSelected"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </button>
+            <span class="select-all-label">Pilih Semua</span>
+            <span class="select-all-count">{{ selectedCount }}/{{ cartItems.length }} dipilih</span>
+          </div>
+
           <div
             v-for="(item, idx) in cartItems"
             :key="item.id"
             class="cart-item glass-panel reveal"
             :class="`reveal-delay-${(idx % 4) + 1}`"
+            :style="!item.selected ? { opacity: 0.55 } : null"
           >
             <button @click="removeItem(item.id)" class="remove-btn" aria-label="Remove item">
               <svg
@@ -80,6 +109,28 @@
               >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <button
+              @click="item.selected = !item.selected"
+              class="checkbox item-checkbox"
+              :class="{ 'checkbox-on': item.selected }"
+              role="checkbox"
+              :aria-checked="item.selected"
+              aria-label="Pilih item"
+            >
+              <svg
+                v-if="item.selected"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
               </svg>
             </button>
             <div class="item-thumb">
@@ -162,8 +213,8 @@
                 ><span class="total-value">{{ formatRupiah(subtotal) }}</span>
               </div>
             </div>
-            <button @click="checkout" class="checkout-btn">
-              Checkout Sekarang
+            <button @click="checkout" class="checkout-btn" :disabled="selectedCount === 0">
+              Checkout Sekarang ({{ selectedCount }})
               <svg
                 width="16"
                 height="16"
@@ -220,8 +271,15 @@ const cartItems = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-const subtotal = computed(() => cartItems.value.reduce((s, i) => s + i.price * i.qty, 0))
-const totalQty = computed(() => cartItems.value.reduce((s, i) => s + i.qty, 0))
+const selectedItems = computed(() => cartItems.value.filter((i) => i.selected))
+const subtotal = computed(() => selectedItems.value.reduce((s, i) => s + i.price * i.qty, 0))
+const totalQty = computed(() => selectedItems.value.reduce((s, i) => s + i.qty, 0))
+const selectedCount = computed(() => selectedItems.value.length)
+
+const allSelected = computed({
+  get: () => cartItems.value.length > 0 && cartItems.value.every((i) => i.selected),
+  set: (val) => cartItems.value.forEach((i) => (i.selected = val)),
+})
 
 const mapItem = (i) => ({
   id: i.id,
@@ -232,6 +290,7 @@ const mapItem = (i) => ({
   condition: i.condition || '',
   qty: i.qty || 1,
   img: i.products?.images?.[0] || i.img || '',
+  selected: true,
 })
 
 async function fetchCart() {
@@ -275,8 +334,8 @@ async function removeItem(id) {
 }
 
 function checkout() {
-  if (cartItems.value.length === 0) return
-  setItems(cartItems.value, 'cart')
+  if (selectedItems.value.length === 0) return
+  setItems(selectedItems.value, 'cart')
   router.push('/transaction')
 }
 </script>
@@ -367,6 +426,36 @@ function checkout() {
 .cart-item:hover {
   transform: translate(1px, 1px);
   box-shadow: 2px 2px 0 0 #111;
+}
+
+/* Select-all bar */
+.select-all-bar {
+  @apply rounded-2xl px-3 sm:px-5 py-3 flex items-center gap-3;
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 0 #111;
+}
+@media (min-width: 640px) {
+  .select-all-bar {
+    box-shadow: 4px 4px 0 0 #111;
+  }
+}
+.select-all-label {
+  @apply text-sm font-bold text-gray-900;
+}
+.select-all-count {
+  @apply text-xs text-black/40 ml-auto whitespace-nowrap;
+}
+
+/* Checkbox */
+.checkbox {
+  @apply w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 bg-white text-white transition-colors duration-200;
+  border: 2px solid #111;
+}
+.checkbox-on {
+  background: linear-gradient(135deg, #c1121f, #780000);
+}
+.item-checkbox {
+  @apply self-center;
 }
 .remove-btn {
   @apply absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 rounded-lg flex items-center justify-center text-black hover:text-white hover:bg-[#C1121F] transition-colors duration-200;
@@ -484,6 +573,11 @@ function checkout() {
 .checkout-btn:hover {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 0 #111;
+}
+.checkout-btn:disabled {
+  @apply opacity-40 cursor-not-allowed;
+  transform: none;
+  box-shadow: 3px 3px 0 0 #111;
 }
 .secure-note {
   @apply flex items-center justify-center gap-1.5 text-black/40 text-[11px] mt-3;

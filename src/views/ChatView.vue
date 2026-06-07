@@ -63,8 +63,11 @@
           class="chat-item glass-panel reveal"
           :class="`reveal-delay-${(idx % 4) + 1}`"
         >
-          <div class="chat-avatar" :class="chat.gradient || 'avatar-fashion'">
-            {{ (chat.name || chat.other_user?.name || '?')[0].toUpperCase() }}
+          <div class="chat-avatar-wrap">
+            <div class="chat-avatar" :class="chat.gradient || 'avatar-fashion'">
+              {{ (chat.name || chat.other_user?.name || '?')[0].toUpperCase() }}
+            </div>
+            <span v-if="isOnline(otherUserId(chat))" class="avatar-online-dot" title="Online"></span>
           </div>
           <div class="chat-info">
             <div class="chat-info-top">
@@ -104,8 +107,9 @@
           <p class="active-name">
             {{ activeChat?.name || activeChat?.other_user?.name || 'Pengguna' }}
           </p>
-          <div class="online-row">
-            <span class="online-dot"></span><span class="online-text">Online</span>
+          <div class="online-row" :class="{ 'is-offline': !activeOnline }">
+            <span class="online-dot"></span>
+            <span class="online-text">{{ activeOnline ? 'Online' : 'Offline' }}</span>
           </div>
         </div>
       </div>
@@ -170,12 +174,28 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import { useAuth } from '@/composables/useAuth'
 import { useChats } from '@/composables/useChats'
+import { usePresence } from '@/composables/usePresence'
 import AuthGate from '@/components/AuthGate.vue'
 import api from '@/services/api'
 
 useScrollReveal()
 const { isLoggedIn, user } = useAuth()
 const { chats, totalUnread, fetchChats, markChatRead } = useChats()
+const { isOnline } = usePresence()
+
+// Resolve the *other* participant's profile id for a chat. Prefer the joined
+// `other_user.id`; fall back to deriving it from buyer_id/seller_id vs. me.
+function otherUserId(chat) {
+  if (!chat) return null
+  if (chat.other_user?.id) return chat.other_user.id
+  const me = user.value?.id
+  if (me && chat.buyer_id && chat.seller_id) {
+    return chat.buyer_id === me ? chat.seller_id : chat.buyer_id
+  }
+  return chat.other_user_id || chat.seller_id || chat.buyer_id || null
+}
+
+const activeOnline = computed(() => isOnline(otherUserId(activeChat.value)))
 
 const activeChatId = ref(null)
 const activeChat = ref(null)
@@ -375,9 +395,17 @@ function isMyMessage(msg) {
   transform: translate(1.5px, 1.5px);
   box-shadow: 2px 2px 0 0 #111;
 }
+.chat-avatar-wrap {
+  @apply relative flex-shrink-0;
+}
 .chat-avatar {
   @apply w-11 h-11 sm:w-12 sm:h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-base sm:text-lg;
   border: 2px solid #111;
+}
+/* Real-time online indicator on the list avatar */
+.avatar-online-dot {
+  @apply absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500;
+  border: 2px solid #fdf0d5;
 }
 .avatar-fashion {
   background: linear-gradient(135deg, #c1121f, #780000);
@@ -446,6 +474,14 @@ function isMyMessage(msg) {
 }
 .online-text {
   @apply text-[11px] font-semibold text-emerald-600;
+}
+/* Offline state — muted grey dot + label */
+.online-row.is-offline .online-dot {
+  @apply bg-black/30;
+  box-shadow: none;
+}
+.online-row.is-offline .online-text {
+  @apply text-black/40;
 }
 
 .messages-area {
