@@ -75,7 +75,7 @@
             </div>
             <div class="order-actions">
               <button v-if="order.status === 'Selesai'" @click="reviewOrder(order.id)" class="action-btn review-btn">Beri Ulasan</button>
-              <button v-if="['Diproses'].includes(order.status)" @click="cancelOrder(order.id)" class="action-btn cancel-btn">Batalkan</button>
+              <button v-if="['Menunggu Konfirmasi', 'Diproses'].includes(order.status)" @click="cancelOrder(order.id)" class="action-btn cancel-btn">Batalkan</button>
             </div>
           </div>
         </div>
@@ -99,11 +99,12 @@ const { isLoggedIn } = useAuth()
 const goBack = () => { if (window.history.state?.back) router.back(); else router.push('/profile') }
 
 const filters = [
-  { label: 'Semua',      value: 'all' },
-  { label: 'Diproses',   value: 'Diproses' },
-  { label: 'Dikirim',    value: 'Dikirim' },
-  { label: 'Selesai',    value: 'Selesai' },
-  { label: 'Dibatalkan', value: 'Dibatalkan' },
+  { label: 'Semua',               value: 'all' },
+  { label: 'Menunggu Konfirmasi', value: 'Menunggu Konfirmasi' },
+  { label: 'Diproses',            value: 'Diproses' },
+  { label: 'Dikirim',             value: 'Dikirim' },
+  { label: 'Selesai',             value: 'Selesai' },
+  { label: 'Dibatalkan',          value: 'Dibatalkan' },
 ]
 
 const activeFilter = ref('all')
@@ -116,14 +117,16 @@ const error   = ref(null)
 const formatPrice = (p) => (p || 0).toLocaleString('id-ID')
 
 const getStatusLabel = (s) => ({
+  'Menunggu Konfirmasi':'Menunggu Konfirmasi',
   Diproses:'Diproses', Dikirim:'Dikirim', Selesai:'Selesai', Dibatalkan:'Dibatalkan',
   // fallback for English values the API might also return
-  pending:'Menunggu', processing:'Diproses', shipped:'Dikirim', delivered:'Selesai', cancelled:'Dibatalkan',
+  pending:'Menunggu', awaiting_confirmation:'Menunggu Konfirmasi', processing:'Diproses', shipped:'Dikirim', delivered:'Selesai', cancelled:'Dibatalkan',
 }[s] || s)
 
 const getStatusClass = (s) => ({
+  'Menunggu Konfirmasi':'status-wait',
   Diproses:'status-process', Dikirim:'status-ship', Selesai:'status-done', Dibatalkan:'status-cancel',
-  pending:'status-pending', processing:'status-process', shipped:'status-ship', delivered:'status-done', cancelled:'status-cancel',
+  pending:'status-pending', awaiting_confirmation:'status-wait', processing:'status-process', shipped:'status-ship', delivered:'status-done', cancelled:'status-cancel',
 }[s] || 'status-pending')
 
 async function fetchOrders() {
@@ -183,6 +186,7 @@ const cancelOrder = async (id) => {
 .order-header { @apply flex items-center justify-between mb-3; }
 .order-id { @apply text-xs font-bold text-black/50 uppercase tracking-wider; }
 .order-status { @apply text-[11px] font-bold px-3 py-1 rounded-md uppercase tracking-wider; }
+.status-wait     { background: rgba(234,88,12,0.12); color: #c2410c; }
 .status-pending  { background: rgba(234,179,8,0.12); color: #a16207; }
 .status-process  { background: rgba(59,130,246,0.12); color: #1d4ed8; }
 .status-ship     { background: rgba(102,155,188,0.15); color: #003049; }

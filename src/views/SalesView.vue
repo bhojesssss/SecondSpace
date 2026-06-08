@@ -133,6 +133,14 @@
             </div>
             <div class="order-actions">
               <button
+                v-if="order.status === 'Menunggu Konfirmasi'"
+                @click="confirmOrder(order.id)"
+                class="action-btn confirm-btn"
+                :disabled="confirmingId === order.id"
+              >
+                {{ confirmingId === order.id ? 'Mengonfirmasi...' : 'Konfirmasi Pesanan' }}
+              </button>
+              <button
                 v-if="order.status === 'Diproses' && shippingId !== order.id"
                 @click="openShipForm(order.id)"
                 class="action-btn ship-btn"
@@ -201,11 +209,12 @@ const goBack = () => {
 }
 
 const filters = [
-  { label: 'Semua',      value: 'all' },
-  { label: 'Diproses',   value: 'Diproses' },
-  { label: 'Dikirim',    value: 'Dikirim' },
-  { label: 'Selesai',    value: 'Selesai' },
-  { label: 'Dibatalkan', value: 'Dibatalkan' },
+  { label: 'Semua',            value: 'all' },
+  { label: 'Menunggu Konfirmasi', value: 'Menunggu Konfirmasi' },
+  { label: 'Diproses',         value: 'Diproses' },
+  { label: 'Dikirim',          value: 'Dikirim' },
+  { label: 'Selesai',          value: 'Selesai' },
+  { label: 'Dibatalkan',       value: 'Dibatalkan' },
 ]
 
 const activeFilter = ref('all')
@@ -221,6 +230,9 @@ const trackingInput = ref('')
 const submittingShip = ref(false)
 const shipError      = ref(null)
 
+// Confirm order state
+const confirmingId = ref(null)
+
 const formatPrice = (p) => (p || 0).toLocaleString('id-ID')
 const formatDate  = (iso) => {
   if (!iso) return ''
@@ -230,6 +242,7 @@ const formatDate  = (iso) => {
 }
 
 const getStatusClass = (s) => ({
+  'Menunggu Konfirmasi': 'status-wait',
   Diproses:   'status-pending',
   Dikirim:    'status-ship',
   Selesai:    'status-done',
@@ -237,7 +250,7 @@ const getStatusClass = (s) => ({
 }[s] || 'status-pending')
 
 const counts = computed(() => {
-  const c = { all: orders.value.length, Diproses: 0, Dikirim: 0, Selesai: 0, Dibatalkan: 0 }
+  const c = { all: orders.value.length, 'Menunggu Konfirmasi': 0, Diproses: 0, Dikirim: 0, Selesai: 0, Dibatalkan: 0 }
   for (const o of orders.value) {
     if (c[o.status] !== undefined) c[o.status]++
   }
@@ -267,6 +280,19 @@ async function fetchOrders() {
 
 onMounted(fetchOrders)
 watch(activeFilter, fetchOrders)
+
+async function confirmOrder(id) {
+  if (confirmingId.value) return
+  confirmingId.value = id
+  try {
+    await api.patch(`/orders/sales/${id}/confirm`)
+    await fetchOrders()
+  } catch (e) {
+    error.value = e.message || 'Gagal mengonfirmasi pesanan.'
+  } finally {
+    confirmingId.value = null
+  }
+}
 
 const openShipForm = (id) => {
   shippingId.value = id
@@ -332,6 +358,7 @@ async function submitShip(id) {
 .order-header { @apply flex items-center justify-between mb-3; }
 .order-id { @apply text-xs font-bold text-black/50 uppercase tracking-wider; }
 .order-status { @apply text-[11px] font-bold px-3 py-1 rounded-md uppercase tracking-wider; }
+.status-wait     { background: rgba(234,88,12,0.15); color: #c2410c; }
 .status-pending  { background: rgba(234,179,8,0.15); color: #a16207; }
 .status-ship     { background: rgba(102,155,188,0.18); color: #003049; }
 .status-done     { background: rgba(22,163,74,0.14); color: #166534; }
@@ -362,6 +389,9 @@ async function submitShip(id) {
 .action-btn { @apply px-3 py-1.5 text-[11px] font-bold rounded-lg; border: 2px solid #111; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease; }
 .ship-btn { @apply text-white; background: linear-gradient(135deg, #C1121F, #780000); box-shadow: 2px 2px 0 0 #111; }
 .ship-btn:hover { transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+.confirm-btn { @apply text-white; background: linear-gradient(135deg, #669BBC, #003049); box-shadow: 2px 2px 0 0 #111; }
+.confirm-btn:hover:not(:disabled) { transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #111; }
+.confirm-btn:disabled { @apply opacity-60 cursor-not-allowed; }
 
 /* Inline ship form */
 .ship-form { @apply mt-3 pt-3 border-t-2 border-dashed border-black/15; }
