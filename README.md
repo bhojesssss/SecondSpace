@@ -36,7 +36,7 @@ Second Space menggunakan palet warna merah-krem untuk segmen Fashion dan biru ge
 
 Tech Stack
 
-Frontend: HTML, CSS, JavaScript (React)
+Frontend: HTML, CSS, Vue 
 Deployment: Vercel
 Version Control: Git & GitHub
 Design Tools: Figma
