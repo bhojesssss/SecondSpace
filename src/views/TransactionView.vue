@@ -7,6 +7,35 @@
     />
 
     <template v-else>
+      <!-- Order placed → waiting for seller confirmation -->
+      <div v-if="orderSuccess" class="success-state reveal">
+        <div class="success-icon">
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 8v4l2 2" />
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+        </div>
+        <h2 class="success-title">Pesanan Diterima!</h2>
+        <p class="success-msg">Pesanan anda sedang di konfirmasi oleh penjual.</p>
+        <p class="success-sub">
+          Kami akan memberi tahu kamu lewat notifikasi begitu penjual mengonfirmasi pesananmu.
+        </p>
+        <div class="success-actions">
+          <router-link to="/profile/history" class="success-cta">Lihat Pesanan</router-link>
+          <router-link to="/catalog" class="success-cta-alt">Belanja Lagi</router-link>
+        </div>
+      </div>
+
+      <template v-else>
       <section class="section-gap">
         <div class="header-wrap">
           <button @click="goBack" class="back-btn" aria-label="Back">
@@ -245,6 +274,7 @@
           </div>
         </aside>
       </div>
+      </template>
     </template>
   </div>
 </template>
@@ -316,8 +346,10 @@ const selectedPayment = ref('bank')
 const notes = ref('')
 const paying = ref(false)
 const payError = ref('')
+const orderSuccess = ref(false)
 
 import { formatRupiah } from '@/utils/currency'
+const formatPrice = (p) => (p || 0).toLocaleString('id-ID')
 const serviceFee = computed(() => Math.round(subtotal.value * 0.01))
 const total = computed(() => subtotal.value + serviceFee.value)
 
@@ -342,7 +374,7 @@ async function payNow() {
     })
     clear()
     clearCart()
-    router.push('/profile/history')
+    orderSuccess.value = true
   } catch (e) {
     payError.value = e.message || 'Pembayaran gagal. Silakan coba lagi.'
   } finally {
@@ -668,5 +700,56 @@ async function payNow() {
 }
 .skeleton {
   @apply animate-pulse bg-black/10;
+}
+
+/* Order placed → waiting confirmation */
+.success-state {
+  @apply flex flex-col items-center justify-center text-center py-16 sm:py-20 px-4;
+}
+.success-icon {
+  @apply w-20 h-20 rounded-full flex items-center justify-center mb-5;
+  background: linear-gradient(135deg, #c1121f, #780000);
+  border: 2px solid #111;
+  box-shadow: 4px 4px 0 0 #111;
+}
+.success-title {
+  @apply text-2xl font-bold text-gray-900 mb-2;
+  font-family: 'CalSans', serif;
+}
+.success-msg {
+  @apply text-sm sm:text-base font-bold text-[#C1121F] mb-1.5;
+}
+.success-sub {
+  @apply text-xs sm:text-sm text-black/55 max-w-xs leading-relaxed mb-7;
+}
+.success-actions {
+  @apply flex flex-wrap items-center justify-center gap-3;
+}
+.success-cta {
+  @apply inline-block px-6 py-3 text-sm font-bold rounded-xl text-white no-underline;
+  background: linear-gradient(135deg, #c1121f, #780000);
+  border: 2px solid #111;
+  box-shadow: 4px 4px 0 0 #111;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.success-cta:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 #111;
+}
+.success-cta-alt {
+  @apply inline-block px-6 py-3 text-sm font-bold rounded-xl text-black/80 bg-white no-underline;
+  border: 2px solid #111;
+  box-shadow: 4px 4px 0 0 #111;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+.success-cta-alt:hover {
+  color: #c1121f;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 #111;
 }
 </style>

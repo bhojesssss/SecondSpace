@@ -39,7 +39,7 @@
     <!-- ═══════════════════════════════════════ DETAIL CARD ═══════════════════════════════════════ -->
     <template v-else>
       <!-- Hero card -->
-      <section class="reveal mb-5">
+      <section class="reveal mb-6 sm:mb-7">
         <div class="hero-card" :class="heroBgClass(notif.type)">
           <div class="hero-overlay"></div>
           <div class="hero-deco"></div>
@@ -54,19 +54,19 @@
       </section>
 
       <!-- Detail body -->
-      <section class="reveal reveal-delay-1 mb-5">
+      <section class="reveal reveal-delay-1 mb-6 sm:mb-7">
         <div class="sub-header">
           <div class="section-accent fashion-accent"></div>
           <p class="sub-title">Detail</p>
         </div>
         <div class="body-card glass-panel">
           <p class="body-message">{{ notif.message }}</p>
-          <p class="body-detail">{{ notif.detail }}</p>
+          <p v-if="notif.detail" class="body-detail">{{ notif.detail }}</p>
         </div>
       </section>
 
       <!-- Meta info -->
-      <section class="reveal reveal-delay-2 mb-5">
+      <section class="reveal reveal-delay-2 mb-6 sm:mb-7">
         <div class="sub-header">
           <div class="section-accent fashion-accent"></div>
           <p class="sub-title">Informasi</p>
@@ -286,7 +286,7 @@ const shortId = (id) => {
 
 /* ── Sub header ────────────────────────────────────────────────────────────── */
 .sub-header {
-  @apply flex items-center gap-2 mb-3;
+  @apply flex items-center gap-2 mb-3.5;
 }
 .sub-header .section-accent {
   @apply h-4;
@@ -297,25 +297,25 @@ const shortId = (id) => {
 
 /* ── Body card ─────────────────────────────────────────────────────────────── */
 .body-card {
-  @apply rounded-2xl p-4 sm:p-5;
+  @apply rounded-2xl p-5 sm:p-6;
   border: 2px solid #111;
   box-shadow: 4px 4px 0 0 #111;
 }
 .body-message {
-  @apply text-sm font-bold text-gray-900 mb-3 leading-snug;
+  @apply text-sm sm:text-[15px] font-bold text-gray-900 leading-relaxed;
 }
 .body-detail {
-  @apply text-[13px] text-black/65 leading-relaxed;
+  @apply text-[13px] text-black/65 leading-relaxed mt-3 pt-3 border-t border-black/10;
 }
 
 /* ── Meta card ─────────────────────────────────────────────────────────────── */
 .meta-card {
-  @apply rounded-2xl p-4 sm:p-5 divide-y divide-black/10;
+  @apply rounded-2xl p-5 sm:p-6 divide-y divide-black/10;
   border: 2px solid #111;
   box-shadow: 4px 4px 0 0 #111;
 }
 .meta-row {
-  @apply flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0;
+  @apply flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0;
 }
 .meta-key {
   @apply text-[11px] font-bold uppercase tracking-wider text-black/50;
